@@ -1,7 +1,6 @@
 package models
 
 import (
-	"errors"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -77,23 +76,42 @@ func createFamilyMemberFromMap(data map[string]interface{}) (FamilyMember, error
 	}, nil
 }
 
-func DeleteFamilyMember(ID string) (bool, error) {
-	if ID == "" {
-		return false, errors.New("家庭成员ID不能为空")
+func DeleteFamilyMemberByID(id int) error {
+	if err := db.Where("id = ?", id).Delete(FamilyMember{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func Comfirmfamilymember(id int) error {
+	var mod FamilyMember_modifications
+
+	// 查询待审核的家庭成员修改记录
+	result := db.Where("id = ?", id).First(&mod)
+	if result.Error != nil {
+		return fmt.Errorf("未找到待审核的家庭成员信息: %v", result.Error)
 	}
 
-	result := db.Where("id = ?", ID).Delete(&FamilyMember{})
-
-	if err := result.Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, errors.New("指定的家庭成员不存在")
-		}
-		return false, fmt.Errorf("删除家庭成员失败: %v", err)
+	// 创建正式的家庭成员记录
+	familyMember := FamilyMember{
+		CadreID:         mod.CadreID,
+		Relation:        mod.Relation,
+		Name:            mod.Name,
+		BirthDate:       mod.BirthDate,
+		PoliticalStatus: mod.PoliticalStatus,
+		WorkUnit:        mod.WorkUnit,
 	}
 
-	if result.RowsAffected == 0 {
-		return false, errors.New("未找到匹配的家庭成员记录")
+	// 插入到正式的家庭成员表中
+	if err := db.Create(&familyMember).Error; err != nil {
+		return fmt.Errorf("插入家庭成员信息失败: %v", err)
 	}
 
-	return true, nil
+	// 更新审核状态
+	mod.Audited = true
+	if err := db.Save(&mod).Error; err != nil {
+		return fmt.Errorf("更新家庭成员审核状态失败: %v", err)
+	}
+
+	return nil
 }

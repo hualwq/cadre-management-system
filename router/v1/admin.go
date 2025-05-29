@@ -9,6 +9,7 @@ import (
 	"cadre-management/services/assessment_mod_service"
 	"cadre-management/services/cadre_service"
 	"cadre-management/services/familymember_service"
+	"cadre-management/services/resume_service"
 	"net/http"
 	"strconv"
 	"strings"
@@ -51,6 +52,15 @@ type GetpoexpmodCadreID struct {
 
 type ComfirmpoexpForm struct {
 	CadreID string `json:"user_id" binding:"required"`
+}
+
+type ComfirmResumeForm struct {
+	ID int `json:"id" binding:"required"`
+}
+
+type ComfirmfamilymemberForm struct {
+	ID int `json:"id" binding:"required"`
+	// 这里可以根据实际需求添加其他必要的字段
 }
 
 func ComfirmAssessment(c *gin.Context) {
@@ -154,6 +164,48 @@ func ConfirmPositionhistory(c *gin.Context) {
 	}
 
 	appG.Response(http.StatusOK, e.SUCCESS, nil)
+}
+
+func GetCadreInfoModByPage(c *gin.Context) {
+	appG := app.Gin{C: c}
+	name := c.Query("name")
+	department := c.Query("department")
+	id := c.Query("user_id")
+	gender := c.Query("gender")
+	auditedStr := c.Query("audited")
+	var audited *bool
+	if auditedStr != "" {
+		boolValue, err := strconv.ParseBool(auditedStr)
+		if err == nil {
+			audited = &boolValue
+		}
+	}
+
+	cadreInfoService := admin_service.GetCadreInfoModByPage{
+		Name:       name,
+		Department: department,
+		Gender:     gender,
+		ID:         id,
+		Audited:    audited,
+		PageNum:    utils.GetPage(c),
+		PageSize:   setting.AppSetting.PageSize,
+	}
+	cadreInfos, err := cadreInfoService.GetAll()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_GET_CADREINFO_FAIL, nil)
+		return
+	}
+
+	count, err := cadreInfoService.Count()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_GET_CADREINFO_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, map[string]interface{}{
+		"lists": cadreInfos,
+		"total": count,
+	})
 }
 
 func GetAssessmentsMod(c *gin.Context) {
@@ -551,6 +603,145 @@ func DeleteAssessmentbyID(c *gin.Context) {
 	}
 	if err := assessmentService.Delete(); err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_DELETE_ASSESSMENT_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, nil)
+}
+
+func DeleteFamilyMemberByID(c *gin.Context) {
+	appG := app.Gin{C: c}
+	valid := validation.Validation{}
+	id := com.StrTo(c.Query("id")).MustInt()
+	valid.Min(id, 1, "id").Message("ID 必须大于 0")
+
+	if valid.HasErrors() {
+		app.MarkErrors(valid.Errors)
+		appG.Response(http.StatusOK, e.INVALID_PARAMS, nil)
+		return
+	}
+
+	familyMemberService := familymember_service.FamilyMemberDelete{ID: id}
+	err := familyMemberService.Delete()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_FAMILYMEMBERIES_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, nil)
+}
+
+func DeletePositionhistorybyID(c *gin.Context) {
+	appG := app.Gin{C: c}
+	valid := validation.Validation{}
+	id := com.StrTo(c.Query("id")).MustInt()
+	valid.Min(id, 1, "id").Message("ID 必须大于 0")
+
+	if valid.HasErrors() {
+		app.MarkErrors(valid.Errors)
+		appG.Response(http.StatusOK, e.INVALID_PARAMS, nil)
+		return
+	}
+
+	positionHistoryService := admin_service.PositionHistoryDelete{ID: id}
+	err := positionHistoryService.Delete()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_GET_POSITION_HISTORIES_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, nil)
+}
+
+func DeleteCadreInfoByID(c *gin.Context) {
+	appG := app.Gin{C: c}
+	valid := validation.Validation{}
+	id := c.Param("id")
+	valid.Required(id, "id").Message("ID 不能为空")
+
+	if valid.HasErrors() {
+		app.MarkErrors(valid.Errors)
+		appG.Response(http.StatusOK, e.INVALID_PARAMS, nil)
+		return
+	}
+
+	cadreInfoService := admin_service.CadreInfoDelete{ID: id}
+	err := cadreInfoService.Delete()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_GET_CADREINFO_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, nil)
+}
+
+func DeleteResumeEntryByID(c *gin.Context) {
+	appG := app.Gin{C: c}
+	valid := validation.Validation{}
+	id := com.StrTo(c.Query("id")).MustInt()
+	valid.Min(id, 1, "id").Message("ID 必须大于 0")
+
+	if valid.HasErrors() {
+		app.MarkErrors(valid.Errors)
+		appG.Response(http.StatusOK, e.INVALID_PARAMS, nil)
+		return
+	}
+
+	resumeEntryService := resume_service.ResumeEntryDelete{ID: id}
+	err := resumeEntryService.Delete()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_RESUME_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, nil)
+}
+
+func ComfirmResume(c *gin.Context) {
+	var (
+		appG = app.Gin{C: c}
+		form ComfirmResumeForm
+	)
+
+	httpCode, errCode := app.BindAndValid(c, &form)
+
+	if errCode != e.SUCCESS {
+		appG.Response(httpCode, errCode, nil)
+		return
+	}
+
+	ResumeService := resume_service.ComfirmResume{
+		ID: form.ID,
+	}
+
+	if err := ResumeService.ComfirmResume(); err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_ADD_RESUME_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, nil)
+}
+
+func Comfirmfamilymember(c *gin.Context) {
+	var (
+		appG = app.Gin{C: c}
+		form ComfirmfamilymemberForm
+	)
+
+	httpCode, errCode := app.BindAndValid(c, &form)
+
+	if errCode != e.SUCCESS {
+		appG.Response(httpCode, errCode, nil)
+		return
+	}
+
+	FamilyMemberService := familymember_service.Comfirmfamilymember{
+		ID: form.ID,
+		// 这里可以根据实际需求初始化其他字段
+	}
+
+	if err := FamilyMemberService.Comfirmfamilymember(); err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_ADD_FAMILYMEBER, nil)
 		return
 	}
 

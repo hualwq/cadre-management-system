@@ -171,7 +171,7 @@ func GetPositionHistoryModTotal(maps interface{}) (int64, error) {
 }
 
 // DeletePositionHistoryByID delete a single position history
-func DeletePositionHistoryByID(id int) error {
+func DeletePositionHistoryModByID(id int) error {
 	if err := db.Where("id = ?", id).Delete(PositionHistory_mod{}).Error; err != nil {
 		return err
 	}

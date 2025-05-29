@@ -104,3 +104,10 @@ func AddCadreInfofromMod(cadreid string) error {
 
 	return nil
 }
+
+func DeleteCadreInfoByID(id string) error {
+	if err := db.Where("user_id = ?", id).Delete(CadreInfo{}).Error; err != nil {
+		return err
+	}
+	return nil
+}

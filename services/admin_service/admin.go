@@ -104,3 +104,60 @@ type DeletePosexpModByID struct {
 func (d *DeletePosexpModByID) DeleteMod() error {
 	return models.DeletePosexpByID(d.ID)
 }
+
+type GetCadreInfoModByPage struct {
+	ID         string
+	Name       string
+	Department string
+	Gender     string
+	Audited    *bool
+
+	PageNum  int
+	PageSize int
+}
+
+func (g *GetCadreInfoModByPage) GetAll() ([]models.Cadre_Modification, error) {
+	return models.GetCadreInfoModByPage(g.PageNum, g.PageSize, g.getMaps())
+}
+
+func (g *GetCadreInfoModByPage) Count() (int64, error) {
+	return models.GetCadreInfoModTotal(g.getMaps())
+}
+
+func (g *GetCadreInfoModByPage) getMaps() map[string]interface{} {
+	maps := make(map[string]interface{})
+
+	if g.Name != "" {
+		maps["name"] = g.Name
+	}
+	if g.Department != "" {
+		maps["department"] = g.Department
+	}
+	if g.Audited != nil {
+		maps["is_audited"] = *g.Audited
+	}
+	if g.ID != "" {
+		maps["user_id"] = g.ID
+	}
+	if g.Gender != "" {
+		maps["gender"] = g.Gender
+	}
+
+	return maps
+}
+
+type PositionHistoryDelete struct {
+	ID int
+}
+
+func (phd *PositionHistoryDelete) Delete() error {
+	return models.DeletePositionHistoryByID(phd.ID)
+}
+
+type CadreInfoDelete struct {
+	ID string
+}
+
+func (cid *CadreInfoDelete) Delete() error {
+	return models.DeleteCadreInfoByID(cid.ID)
+}

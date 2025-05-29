@@ -1,49 +1,45 @@
 package middleware
 
 import (
-    "github.com/gin-gonic/gin"
-    "net/http"
-	"github.com/dgrijalva/jwt-go"
-    "cadre-management/pkg/setting"
+	"cadre-management/pkg/utils"
+	"net/http"
+	"strings"
 
+	"github.com/gin-gonic/gin"
 )
 
 func RoleMiddleware(requiredRoles ...string) gin.HandlerFunc {
-    return func(c *gin.Context) {
-        tokenString := c.GetHeader("Authorization")
-        if tokenString == "" {
-            c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Missing token"})
-            return
-        }
+	return func(c *gin.Context) {
+		// 从 Header 或 Query 获取 Token
+		token := ""
+		authHeader := c.GetHeader("Authorization")
+		if authHeader != "" {
+			token = strings.TrimPrefix(authHeader, "Bearer ")
+		} else {
+			token = c.Query("token")
+		}
 
-        token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-            // 验证签名方法等
-            return []byte(setting.AppSetting.JwtSecret), nil
-        })
-        if err != nil || !token.Valid {
-            c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
-            return
-        }
+		if token == "" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Missing token"})
+			return
+		}
 
-        claims, ok := token.Claims.(jwt.MapClaims)
-        if !ok {
-            c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid claims"})
-            return
-        }
+		// 解析 Token
+		claims, err := utils.ParseToken(token)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			return
+		}
 
-        userRole, ok := claims["role"].(string)
-        if !ok {
-            c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Role not found in token"})
-            return
-        }
+		// 检查用户角色是否符合要求
+		userRole := claims.Role
+		for _, role := range requiredRoles {
+			if userRole == role {
+				c.Next()
+				return
+			}
+		}
 
-        for _, role := range requiredRoles {
-            if userRole == role {
-                c.Next()
-                return
-            }
-        }
-
-        c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
-    }
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
+	}
 }

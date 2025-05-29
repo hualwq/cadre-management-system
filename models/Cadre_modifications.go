@@ -115,7 +115,7 @@ func EditCadreInfoByID(id string, data map[string]interface{}) error {
 	return db.Model(&Cadre_Modification{}).Where("user_id = ?", id).Updates(data).Error
 }
 
-func DeleteCadreInfoByID(id string) error {
+func DeleteCadreInfoModByID(id string) error {
 
 	if err := db.Where("user_id = ? and is_audited = ?", id, 0).Delete(&FamilyMember{}).Error; err != nil {
 		return err
@@ -134,4 +134,32 @@ func DeleteCadreInfoByID(id string) error {
 	}
 
 	return nil
+}
+
+func GetCadreInfoModByPage(pageNum int, pageSize int, maps interface{}) ([]Cadre_Modification, error) {
+	var (
+		cadreInfos []Cadre_Modification
+		err        error
+	)
+
+	if pageSize > 0 && pageNum > 0 {
+		err = db.Where(maps).Find(&cadreInfos).Offset(pageNum).Limit(pageSize).Error
+	} else {
+		err = db.Where(maps).Find(&cadreInfos).Error
+	}
+
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, err
+	}
+
+	return cadreInfos, nil
+}
+
+func GetCadreInfoModTotal(maps interface{}) (int64, error) {
+	var count int64
+	if err := db.Model(&Cadre_Modification{}).Where(maps).Count(&count).Error; err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }

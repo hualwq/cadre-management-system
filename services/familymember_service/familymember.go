@@ -80,3 +80,24 @@ type FamilyMemberModifications_cadreinfo struct {
 func (fmm *FamilyMemberModifications_cadreinfo) GetByCadreID() ([]models.FamilyMember_modifications, error) {
 	return models.GetFamilyMemberModificationsByCadreID(fmm.CadreID)
 }
+
+type FamilyMemberDelete struct {
+	ID int
+}
+
+func (fmd *FamilyMemberDelete) Delete() error {
+	return models.DeleteFamilyMemberByID(fmd.ID)
+}
+
+type Comfirmfamilymember struct {
+	ID int
+	// 可以添加其他必要的字段
+}
+
+func (c Comfirmfamilymember) Comfirmfamilymember() error {
+	if err := models.Comfirmfamilymember(c.ID); err != nil {
+		return err
+	}
+
+	return nil
+}

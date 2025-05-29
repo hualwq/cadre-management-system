@@ -20,36 +20,37 @@ func InitRouter() *gin.Engine {
 	apiv1 := r.Group("/cadre")
 	apiv1.Use(middleware.JWT()) //普通干部
 	{
-		apiv1.POST("/info", v1.AddCadreInfo_mod)
-		apiv1.POST("/assessment", v1.AddAssessment_mod)
-		apiv1.POST("/positionhistory", v1.AddPositionHistory_mod)
-		apiv1.POST("/yearposition", v1.Addyearposition_mod)
-		apiv1.POST("/resume", v1.AddResume_mod)
-		apiv1.POST("/familymember", v1.Addfamilymember_mod)
-		apiv1.POST("/image", v1.UploadImage)
+		apiv1.POST("/info", middleware.RoleMiddleware("cadre"), v1.AddCadreInfo_mod)
+		apiv1.POST("/assessment", middleware.RoleMiddleware("cadre"), v1.AddAssessment_mod)
+		apiv1.POST("/positionhistory", middleware.RoleMiddleware("cadre"), v1.AddPositionHistory_mod)
+		apiv1.POST("/yearposition", middleware.RoleMiddleware("cadre"), v1.Addyearposition_mod)
+		apiv1.POST("/resume", middleware.RoleMiddleware("cadre"), v1.AddResume_mod)
+		apiv1.POST("/familymember", middleware.RoleMiddleware("cadre"), v1.Addfamilymember_mod)
+		apiv1.POST("/image", middleware.RoleMiddleware("cadre"), v1.UploadImage)
 
-		apiv1.PUT("/cadre", v1.EditInfo_mod)
-		apiv1.PUT("/resume", v1.EditResume_Mod)
-		apiv1.PUT("/positionhistory", v1.EditPh_Mod)
-		apiv1.PUT("/familymember", v1.Editfamilymember_mod)
-		apiv1.PUT("/assessment", v1.EditassessmentMod)
+		apiv1.PUT("/cadre", middleware.RoleMiddleware("cadre"), v1.EditInfo_mod)
+		apiv1.PUT("/resume", middleware.RoleMiddleware("cadre"), v1.EditResume_Mod)
+		apiv1.PUT("/positionhistory", middleware.RoleMiddleware("cadre"), v1.EditPh_Mod)
+		apiv1.PUT("/familymember", middleware.RoleMiddleware("cadre"), v1.Editfamilymember_mod)
+		apiv1.PUT("/assessment", middleware.RoleMiddleware("cadre"), v1.EditassessmentMod)
 
-		apiv1.DELETE("/familymember", v1.DeleteFamilyMemberModification)
-		apiv1.DELETE("/resume", v1.DeleteFamilyMemberModification)
-		apiv1.DELETE("/positionhistory", v1.Deletephmod)
-		apiv1.DELETE("/cadre", v1.Deletecadremod)
-		apiv1.DELETE("/posexp", v1.DeletePosexpmodbyID)
-		apiv1.DELETE("/assessment", v1.DeleteAssessmentmodbyID)
+		apiv1.DELETE("/familymember", middleware.RoleMiddleware("cadre"), v1.DeleteFamilyMemberModification)
+		apiv1.DELETE("/resume", middleware.RoleMiddleware("cadre"), v1.DeleteFamilyMemberModification)
+		apiv1.DELETE("/positionhistory", middleware.RoleMiddleware("cadre"), v1.Deletephmod)
+		apiv1.DELETE("/cadre", middleware.RoleMiddleware("cadre"), v1.Deletecadremod)
+		apiv1.DELETE("/posexp", middleware.RoleMiddleware("cadre"), v1.DeletePosexpmodbyID)
+		apiv1.DELETE("/assessment", middleware.RoleMiddleware("cadre"), v1.DeleteAssessmentmodbyID)
 
 	}
 	apiv2 := r.Group("/admin")
-	apiv2.Use(middleware.JWT()) //管理员
+	apiv2.Use(middleware.JWT()) // 管理员
 	{
-		apiv2.GET("/assessmentbypage", v1.GetAssessmentsMod)
+		apiv2.GET("/assessmentbypage",middleware.RoleMiddleware("admin"),  v1.GetAssessmentsMod)
 		apiv2.GET("/phmodbypage", v1.GetPositionHistoriesMod)
 		apiv2.GET("/phbypage", v1.GetPositionHistories)
+		apiv2.GET("/cadrebypage", v1.GetCadreInfoModByPage)
 
-		apiv2.GET("/positionhistory", v1.GetPositionHistory_mod)
+		apiv2.GET("/phbyid", v1.GetPositionHistory_mod)
 		apiv2.GET("/assmodbyid", v1.GetAssessmentsModByID)
 		apiv2.GET("/phmodbyid", v1.GetPositionHistoryMod)
 		apiv2.GET("/fmmodbyid", v1.GetFamilyMemberModification)
@@ -65,15 +66,21 @@ func InitRouter() *gin.Engine {
 		apiv2.POST("/assessment", v1.ComfirmAssessment)
 		apiv2.POST("/positionhistory", v1.ConfirmPositionhistory)
 		apiv2.POST("/poexp", v1.Comfirmpoexp)
+		apiv2.POST("/resume", v1.ComfirmResume)
+		apiv2.POST("/familymember", v1.Comfirmfamilymember)
 
 		apiv2.DELETE("/assessment", v1.DeleteAssessmentbyID)
 		apiv2.DELETE("/poexp", v1.DeletePosexpByID)
+		apiv2.DELETE("/familymember", v1.DeleteFamilyMemberByID)
+		apiv2.DELETE("/positionhistory", v1.DeletePositionhistorybyID)
+		apiv2.DELETE("/cadreinfo", v1.DeleteCadreInfoByID)
+		apiv2.DELETE("/resume", v1.DeleteResumeEntryByID)
 	}
 	apiv3 := r.Group("/sysadmin")
 	apiv3.Use(middleware.JWT())
 	{
-		apiv3.GET("/userbypage", v1.GetUserByPage)
-		apiv3.GET("/alluser", v1.GetAllUser)
+		apiv3.GET("/userbypage", middleware.RoleMiddleware("sysadmin"), v1.GetUserByPage)
+		apiv3.GET("/alluser", middleware.RoleMiddleware("sysadmin"), v1.GetAllUser)
 	}
 
 	return r

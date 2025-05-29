@@ -247,3 +247,10 @@ func DeletePosexpByID(id int) error {
 	}
 	return nil
 }
+
+func DeletePositionHistoryByID(id int) error {
+	if err := db.Where("id = ?", id).Delete(PositionHistory{}).Error; err != nil {
+		return err
+	}
+	return nil
+}

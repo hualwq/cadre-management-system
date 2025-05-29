@@ -73,3 +73,24 @@ func (r *ResumeEntry_mod) EditResumeMod() error {
 	}
 	return models.EditResumeEntryModification(r.ID, data)
 }
+
+type ResumeEntryDelete struct {
+	ID int
+}
+
+func (red *ResumeEntryDelete) Delete() error {
+	return models.DeleteResumeEntryByID(red.ID)
+}
+
+type ComfirmResume struct {
+	ID int
+	// 可以添加其他必要的字段
+}
+
+func (c ComfirmResume) ComfirmResume() error {
+	if err := models.ComfirmResume(c.ID); err != nil {
+		return err
+	}
+
+	return nil
+}

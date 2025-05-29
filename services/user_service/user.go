@@ -1,19 +1,17 @@
 package user_service
 
-
 import (
 	"cadre-management/models"
-	"errors"
 	"cadre-management/pkg/utils"
+	"errors"
 )
 
 type User struct {
-	UserID    string     `json:"user_id"`
-	Password  string     `json:"-"`
-	Role      string     `json:"role"`
-    Name      string     `json:"name"`
+	UserID   string `json:"user_id"`
+	Password string `json:"-"`
+	Role     string `json:"role"`
+	Name     string `json:"name"`
 }
-
 
 func (s *User) Login(userid, password string) (string, error) {
 	// 1. 认证用户
@@ -23,7 +21,7 @@ func (s *User) Login(userid, password string) (string, error) {
 	}
 
 	// 2. 生成 JWT
-	token, err := utils.GenerateToken(user.UserID, user.Password)
+	token, err := utils.GenerateToken(user.UserID, user.Password, user.Role)
 	if err != nil {
 		return "", errors.New("生成 token 失败")
 	}
@@ -45,7 +43,7 @@ func (s *User) RefreshToken(oldToken string) (string, error) {
 	}
 
 	// 生成新 Token
-	newToken, err := utils.GenerateToken(user.UserID, user.Password)
+	newToken, err := utils.GenerateToken(user.UserID, user.Password, user.Role)
 	if err != nil {
 		return "", errors.New("刷新 Token 失败")
 	}
@@ -53,17 +51,16 @@ func (s *User) RefreshToken(oldToken string) (string, error) {
 	return newToken, nil
 }
 
-
-func (s *User) RegistUser() error{
-    User := map[string]interface{}{
-        "id": s.UserID,
-         "password": s.Password,
-         "name": s.Name,
-    }
-    if err := models.RegisterUser(User); err != nil{
-        return err
-    }
-    return nil
+func (s *User) RegistUser() error {
+	User := map[string]interface{}{
+		"id":       s.UserID,
+		"password": s.Password,
+		"name":     s.Name,
+	}
+	if err := models.RegisterUser(User); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (s *User) GetRole(user_id string) (string, error) {

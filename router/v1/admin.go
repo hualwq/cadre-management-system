@@ -45,6 +45,14 @@ type ComfirmPositionhistoryForm struct {
 	CadreID string `json:"user_id" binding:"required"`
 }
 
+type GetpoexpmodCadreID struct {
+	CadreID string `json:"user_id" binding:"required"`
+}
+
+type ComfirmpoexpForm struct {
+	CadreID string `json:"user_id" binding:"required"`
+}
+
 func ComfirmAssessment(c *gin.Context) {
 	var (
 		appG = app.Gin{C: c}
@@ -230,9 +238,101 @@ func GetAssessmentsModByID(c *gin.Context) {
 	appG.Response(http.StatusOK, e.SUCCESS, assesement)
 }
 
+func GetpoexpmodByID(c *gin.Context) {
+	appG := app.Gin{C: c}
+	idStr := c.Query("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
+		return
+	}
+
+	posexpModService := admin_service.GetPosexpModID{
+		ID: id,
+	}
+	exists, err := posexpModService.ExistByID()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_GET_POEXPMOD_FAIL, nil)
+		return
+	}
+	if !exists {
+		appG.Response(http.StatusNotFound, e.ERROR_GET_POEXPMOD_FAIL, nil)
+		return
+	}
+
+	posexpMod, err := posexpModService.Get()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_GET_POEXPMOD_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, posexpMod)
+}
+
+func GetPoexpModByCadreID(c *gin.Context) {
+	var (
+		appG = app.Gin{C: c}
+		form ComfirmPositionhistoryForm
+	)
+
+	// 参数校验
+	httpCode, errCode := app.BindAndValid(c, &form)
+	if errCode != e.SUCCESS {
+		appG.Response(httpCode, errCode, nil)
+		return
+	}
+
+	poexpModService := admin_service.GetPoexpModByCadreID{
+		CadreID: form.CadreID,
+	}
+	exists, err := poexpModService.ExistByCadreID()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_GET_POEXPMOD_FAIL, nil)
+		return
+	}
+	if !exists {
+		appG.Response(http.StatusNotFound, e.ERROR_GET_POEXPMOD_FAIL, nil)
+		return
+	}
+
+	poexpMods, err := poexpModService.Get()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_GET_POEXPMOD_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, poexpMods)
+}
+
+func Comfirmpoexp(c *gin.Context) {
+	var (
+		appG = app.Gin{C: c}
+		form ComfirmpoexpForm
+	)
+
+	// 参数绑定和校验
+	httpCode, errCode := app.BindAndValid(c, &form)
+	if errCode != e.SUCCESS {
+		appG.Response(httpCode, errCode, nil)
+		return
+	}
+
+	// 调用服务层的确认逻辑
+	poexpService := admin_service.Comfirmpoexp{
+		CadreID: form.CadreID,
+	}
+	if err := poexpService.Comfirmpoexp(); err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_CONFIRM_POSITIONHISTORY_FAIL, nil)
+		return
+	}
+
+	// 返回成功响应
+	appG.Response(http.StatusOK, e.SUCCESS, nil)
+}
+
 func GetPositionHistory_mod(c *gin.Context) {
 	appG := app.Gin{C: c}
-	cadreID := c.Param("id")
+	cadreID := c.Query("id")
 	if cadreID == "" {
 		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
 		return
@@ -282,7 +382,7 @@ func GetPositionHistoriesMod(c *gin.Context) {
 
 	count, err := positionHistoryService.Count()
 	if err != nil {
-		appG.Response(http.StatusInternalServerError, e.ERROR_GET_POSITION_HISTORY_MOD_FAIL, nil)
+		appG.Response(http.StatusInternalServerError, e.ERROR_GET_POSITION_HISTORIES_FAIL, nil)
 		return
 	}
 
@@ -309,12 +409,12 @@ func GetPositionHistoryMod(c *gin.Context) {
 	}
 	positionHistoryMod, err := positionHistoryModService.Get()
 	if err != nil {
-		appG.Response(http.StatusInternalServerError, e.ERROR_GET_POSITION_HISTORY_MOD_FAIL, nil)
+		appG.Response(http.StatusInternalServerError, e.ERROR_GET_POSITION_HISTORIES_FAIL, nil)
 		return
 	}
 
 	if positionHistoryMod == nil {
-		appG.Response(http.StatusNotFound, e.ERROR_GET_POSITION_HISTORY_MOD_FAIL, nil)
+		appG.Response(http.StatusNotFound, e.ERROR_GET_POSITION_HISTORIES_FAIL, nil)
 		return
 	}
 
@@ -375,4 +475,84 @@ func GetFamilyMemberModificationsByCadreID(c *gin.Context) {
 	}
 
 	appG.Response(http.StatusOK, e.SUCCESS, familyMemberModifications)
+}
+
+func DeletePosexpmodbyID(c *gin.Context) {
+	appG := app.Gin{C: c}
+	idStr := c.Query("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
+		return
+	}
+
+	posexpService := admin_service.DeletePosexpModByID{
+		ID: id,
+	}
+	if err := posexpService.DeleteMod(); err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_DELETE_POSEXP_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, nil)
+}
+
+func DeletePosexpByID(c *gin.Context) {
+	appG := app.Gin{C: c}
+	idStr := c.Query("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
+		return
+	}
+
+	posexpService := admin_service.DeletePosexpByID{
+		ID: id,
+	}
+	if err := posexpService.Delete(); err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_DELETE_POSEXP_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, nil)
+}
+
+func DeleteAssessmentmodbyID(c *gin.Context) {
+	appG := app.Gin{C: c}
+	idStr := c.Query("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
+		return
+	}
+
+	assessmentService := assessment_mod_service.DeleteAssessmentModByID{
+		ID: id,
+	}
+	if err := assessmentService.Delete(); err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_DELETE_ASSESSMENT_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, nil)
+}
+
+func DeleteAssessmentbyID(c *gin.Context) {
+	appG := app.Gin{C: c}
+	idStr := c.Query("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
+		return
+	}
+
+	assessmentService := assessment_mod_service.DeleteAssessmentByID{
+		ID: id,
+	}
+	if err := assessmentService.Delete(); err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_DELETE_ASSESSMENT_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, nil)
 }

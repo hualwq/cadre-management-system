@@ -24,12 +24,8 @@ type PositionHistory_mod struct {
 	Audited      bool   `gorm:"default:false;column:is_audited"`
 }
 
-type PositionHistoryBrief_mod struct {
-	Name       string `json:"name"`
-	Department string `json:"department"`
-}
-
 type Posexp_mod struct {
+	ID         int    `gorm:"primaryKey;autoIncrement" json:"id"`
 	CadreID    string `gorm:"size:50;column:user_id" json:"user_id"` // ✅ 用空格分隔两个标签
 	Posyear    string `gorm:"size:20" json:"year"`
 	Department string `gorm:"size:100" json:"department"`
@@ -117,34 +113,6 @@ func AddPositionHistory_mod(data map[string]interface{}) error {
 	return nil
 }
 
-func GetPositionhistoryList_mod_page(page, pageSize int) ([]PositionHistoryBrief_mod, int64, error) {
-	var assessments []PositionHistory_mod
-	var count int64
-
-	// 获取总数
-	if err := db.Model(&PositionHistory_mod{}).Count(&count).Error; err != nil {
-		return nil, 0, err
-	}
-
-	// 分页查询
-	offset := (page - 1) * pageSize
-	if err := db.Offset(offset).Limit(pageSize).Find(&assessments).Error; err != nil {
-		return nil, 0, err
-	}
-
-	// 转换结果
-	var result []PositionHistoryBrief_mod
-	for _, a := range assessments {
-		result = append(result, PositionHistoryBrief_mod{
-			Name:       a.Name,
-			Department: a.Department,
-			// 可以添加更多字段
-		})
-	}
-
-	return result, count, nil
-}
-
 func Addyearpositon(data map[string]interface{}) error {
 	posexp := Posexp_mod{
 		CadreID:    data["user_id"].(string),
@@ -202,7 +170,6 @@ func GetPositionHistoryModTotal(maps interface{}) (int64, error) {
 	return count, nil
 }
 
-
 // DeletePositionHistoryByID delete a single position history
 func DeletePositionHistoryByID(id int) error {
 	if err := db.Where("id = ?", id).Delete(PositionHistory_mod{}).Error; err != nil {
@@ -214,7 +181,7 @@ func DeletePositionHistoryByID(id int) error {
 
 func ExistPositionHistoryByID(id int) (bool, error) {
 	var positionHistory PositionHistory_mod
-	err := db.Select("id").Where("id = ?", id, 0).First(&positionHistory).Error
+	err := db.Select("id").Where("id = ?  and is_audited = ?", id, 0).First(&positionHistory).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return false, err
 	}
@@ -224,4 +191,101 @@ func ExistPositionHistoryByID(id int) (bool, error) {
 	}
 
 	return false, nil
+}
+
+func ExistPosexpModByID(id int) (bool, error) {
+	var posexpMod Posexp_mod
+	err := db.Select("id").Where("id = ? and is_audited = ?", id, 0).First(&posexpMod).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return false, err
+	}
+	if posexpMod.ID > 0 {
+		return true, nil
+	}
+	return false, nil
+}
+
+func GetPosexpModByID(id int) (*Posexp_mod, error) {
+	var posexpMod Posexp_mod
+	err := db.Where("id = ?", id).First(&posexpMod).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, err
+	}
+	return &posexpMod, nil
+}
+
+func EditPositionHistoryMod(id int, data map[string]interface{}) error {
+	var positionHistoryMod PositionHistory_mod
+	if err := db.Model(&positionHistoryMod).Where("id = ?", id).Updates(data).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func ExistPoexpModByCadreID(cadreID string) (bool, error) {
+	var poexpMod Posexp_mod
+	err := db.Select("id").Where("user_id = ? and is_audited = ?", cadreID, 0).First(&poexpMod).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return false, err
+	}
+	if poexpMod.ID > 0 {
+		return true, nil
+	}
+	return false, nil
+}
+
+// GetPoexpModByCadreID 根据 CadreID 获取 PoexpMod 记录
+func GetPoexpModByCadreID(cadreID string) ([]Posexp_mod, error) {
+	var poexpMods []Posexp_mod
+	err := db.Where("user_id = ? and is_audited = ?", cadreID, 0).Find(&poexpMods).Error
+	if err != nil {
+		return nil, err
+	}
+	return poexpMods, nil
+}
+
+func Comfirmpoexp(cadreID string) error {
+	var mod Posexp_mod
+	// 查询待审核的岗位经历修改记录
+	result := db.Where("user_id = ? AND is_audited = false", cadreID).First(&mod)
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return fmt.Errorf("未找到待审核的岗位经历信息: %s", cadreID)
+		}
+		return fmt.Errorf("查询待审核岗位经历信息失败: %v", result.Error)
+	}
+
+	// 创建正式的岗位经历记录
+	poexp := Posexp{
+		CadreID:    mod.CadreID,
+		Posyear:    mod.Posyear,
+		Department: mod.Department,
+		Pos:        mod.Pos,
+	}
+	if err := db.Create(&poexp).Error; err != nil {
+		return err
+	}
+
+	// 更新修改记录的审核状态
+	mod.Audited = true
+	if err := db.Save(&mod).Error; err != nil {
+		return fmt.Errorf("更新审核状态失败: %v", err)
+	}
+
+	return nil
+}
+
+func DeletePosexpModByID(id int) error {
+	if id <= 0 {
+		return errors.New("无效的岗位经历记录 ID")
+	}
+	result := db.Where("id = ?", id).Delete(&Posexp_mod{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return errors.New("未找到匹配的岗位经历记录")
+	}
+	return nil
 }

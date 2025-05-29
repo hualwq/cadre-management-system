@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -53,5 +54,19 @@ func ComfirmAssessment(id int, Grade string) error {
 		return fmt.Errorf("更新审核状态失败: %v", err)
 	}
 
+	return nil
+}
+
+func DeleteAssessmentByID(id int) error {
+	if id <= 0 {
+		return errors.New("无效的考核记录 ID")
+	}
+	result := db.Where("id = ?", id).Delete(&Assessment{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return errors.New("未找到匹配的考核记录")
+	}
 	return nil
 }

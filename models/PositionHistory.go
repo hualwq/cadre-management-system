@@ -24,6 +24,7 @@ type PositionHistory struct {
 }
 
 type Posexp struct {
+	ID         int    `gorm:"primaryKey;autoIncrement" json:"id"`
 	CadreID    string `gorm:"size:50;column:user_id" json:"user_id"`
 	Posyear    string `gorm:"size:20" json:"year"`
 	Department string `gorm:"size:100" json:"department"`
@@ -231,4 +232,18 @@ func GetPosexpTotal(maps interface{}) (int64, error) {
 	}
 
 	return count, nil
+}
+
+func DeletePosexpByID(id int) error {
+	if id <= 0 {
+		return errors.New("无效的岗位经历记录 ID")
+	}
+	result := db.Where("id = ?", id).Delete(&Posexp{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return errors.New("未找到匹配的岗位经历记录")
+	}
+	return nil
 }

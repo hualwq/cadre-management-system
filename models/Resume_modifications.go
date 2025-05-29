@@ -44,7 +44,7 @@ func Add_resume_mod(data map[string]interface{}) error {
 
 func ExistResumeEntryModificationByID(id int) (bool, error) {
 	var entry ResumeEntry_modifications
-	err := db.Select("id").Where("id = ?", id).First(&entry).Error
+	err := db.Select("id").Where("id = ?  and is_audited = ?", id, 0).First(&entry).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return false, err
 	}
@@ -83,5 +83,17 @@ func DeleteResumeEntryModificationByID(id int) error {
 		return err
 	}
 
+	return nil
+}
+
+func EditResumeEntryModification(id int, data map[string]interface{}) error {
+	var resumeEntry ResumeEntry_modifications
+	result := db.Model(&resumeEntry).Where("id = ?", id).Updates(data)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
 	return nil
 }

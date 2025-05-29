@@ -122,6 +122,7 @@ type FamilyMember_modForm struct {
 }
 
 type EditResumeEntry_modForm struct {
+	ID           int    `json:"id"`
 	CadreID      string `json:"user_id"`
 	StartDate    string `json:"start_date"`           // 格式：2007.09 或 2019.12
 	EndDate      string `json:"end_date"`             // 格式：2011.07 或 "至今"
@@ -138,6 +139,33 @@ type EditFamilyMember_modForm struct {
 	BirthDate       string `json:"birth_date,omitempty"`
 	PoliticalStatus string `json:"political_status,omitempty"`
 	WorkUnit        string `json:"work_unit,omitempty"`
+}
+
+type PositionHistoryModEditForm struct {
+	ID           int    `json:"id"`
+	CadreID      string `json:"user_id"`
+	Department   string `json:"department"`
+	Category     string `json:"category"`
+	Office       string `json:"office"`
+	AcademicYear string `json:"academic_year"`
+	Positions    string `json:"positions"`
+	Year         uint   `json:"applied_at_year"`
+	Month        uint   `json:"applied_at_month"`
+	Day          uint   `json:"applied_at_day"`
+}
+
+type EditAssessment_modForm struct {
+	ID          int    `json:"id" binding:"required"`
+	Name        string `json:"name"`
+	CadreID     string `json:"cadre_id"`
+	Phone       string `json:"phone"`
+	Email       string `json:"email"`
+	Department  string `json:"department"`
+	Category    string `json:"category"`
+	AssessDept  string `json:"assess_dept"`
+	Year        int    `json:"year"`
+	WorkSummary string `json:"work_summary"`
+	Grade       string `json:"grade"`
 }
 
 type GetPositionHistoryForm struct {
@@ -455,6 +483,90 @@ func Addfamilymember_mod(c *gin.Context) {
 	appG.Response(http.StatusOK, e.SUCCESS, nil)
 }
 
+func EditResume_Mod(c *gin.Context) {
+	var (
+		appG = app.Gin{C: c}
+		form EditResumeEntry_modForm
+	)
+
+	// 绑定并验证请求数据
+	httpCode, errCode := app.BindAndValid(c, &form)
+	if errCode != e.SUCCESS {
+		appG.Response(httpCode, errCode, nil)
+		return
+	}
+
+	resumeservice := resume_service.ResumeEntry_mod{
+		ID:           form.ID,
+		CadreID:      form.CadreID,
+		StartDate:    form.StartDate,
+		EndDate:      form.EndDate,
+		Organization: form.Organization,
+		Department:   form.Department,
+		Position:     form.Position,
+	}
+
+	exists, err := resumeservice.ExistByID()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_NOT_EXSIT_RESUME, nil)
+		return
+	}
+	if !exists {
+		appG.Response(http.StatusNotFound, e.ERROR_NOT_EXSIT_RESUME, nil)
+		return
+	}
+
+	if err := resumeservice.EditResumeMod(); err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_EDIT_FAMILYMEMBER_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, nil)
+}
+
+func EditPh_Mod(c *gin.Context) {
+	var (
+		appG = app.Gin{C: c}
+		form PositionHistoryModEditForm
+	)
+
+	httpCode, errCode := app.BindAndValid(c, &form)
+	if errCode != e.SUCCESS {
+		appG.Response(httpCode, errCode, nil)
+		return
+	}
+
+	positionhistoryservice := cadre_service.PositionHistoryModEdit{
+		ID:           form.ID,
+		CadreID:      form.CadreID,
+		Department:   form.Department,
+		Category:     form.Category,
+		Office:       form.Office,
+		AcademicYear: form.AcademicYear,
+		Year:         form.Year,
+		Month:        form.Month,
+		Day:          form.Day,
+	}
+
+	exists, err := positionhistoryservice.ExistByID()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_NOT_EXSIT_POSITIONHISTORY, nil)
+		return
+	}
+	if !exists {
+		appG.Response(http.StatusNotFound, e.ERROR_NOT_EXSIT_POSITIONHISTORY, nil)
+		return
+	}
+
+	if err := positionhistoryservice.EditPositionhistorymod(); err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_EDIT_POSITIONHISTORY_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, nil)
+
+}
+
 func Editfamilymember_mod(c *gin.Context) {
 	var (
 		appG = app.Gin{C: c}
@@ -484,6 +596,59 @@ func Editfamilymember_mod(c *gin.Context) {
 	}
 	if !exists {
 		appG.Response(http.StatusNotFound, e.ERROR_NOT_EXSIT_FAMILYMEMBER, nil)
+		return
+	}
+
+	if err := familymemberservice.EditFamilyMemberMod(); err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_EDIT_FAMILYMEMBER_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, nil)
+}
+
+func EditassessmentMod(c *gin.Context) {
+	var (
+		appG = app.Gin{C: c}
+		form EditAssessment_modForm
+	)
+
+	// 绑定并验证 JSON 数据
+	httpCode, errCode := app.BindAndValid(c, &form)
+	if errCode != e.SUCCESS {
+		appG.Response(httpCode, errCode, nil)
+		return
+	}
+
+	// 构造 service 层对象
+	assessmentService := assessment_mod_service.Assessment_mod{
+		ID:          form.ID,
+		Name:        form.Name,
+		CadreID:     form.CadreID,
+		Phone:       form.Phone,
+		Email:       form.Email,
+		Department:  form.Department,
+		Category:    form.Category,
+		AssessDept:  form.AssessDept,
+		Year:        form.Year,
+		WorkSummary: form.WorkSummary,
+		Grade:       form.Grade,
+	}
+
+	// 检查该干部考核信息是否存在
+	exists, err := assessmentService.ExistByID()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_NOT_EXSIT_ASSESSMENT, nil)
+		return
+	}
+	if !exists {
+		appG.Response(http.StatusNotFound, e.ERROR_NOT_EXSIT_ASSESSMENT, nil)
+		return
+	}
+
+	// 执行修改操作
+	if err := assessmentService.EditAssessmentMod(); err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_EDIT_ASSESSMENT_FAIL, nil)
 		return
 	}
 
@@ -616,6 +781,66 @@ func DeleteResumeEntryModificationByID(c *gin.Context) {
 	err = resumeEntryModificationsService.DeleteByID()
 	if err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_RESUME_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, nil)
+}
+
+func Deletephmod(c *gin.Context) {
+	appG := app.Gin{C: c}
+	valid := validation.Validation{}
+	id := com.StrTo(c.Query("id")).MustInt()
+	valid.Min(id, 1, "id").Message("ID 必须大于 0")
+
+	if valid.HasErrors() {
+		app.MarkErrors(valid.Errors)
+		appG.Response(http.StatusOK, e.INVALID_PARAMS, nil)
+		return
+	}
+
+	positionhistoryservice := cadre_service.PositionHistoryModEdit{
+		ID: id,
+	}
+	exists, err := positionhistoryservice.ExistByID()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_DELETE_POSITIONHISTORY_FAIL, nil)
+		return
+	}
+	if !exists {
+		appG.Response(http.StatusOK, e.ERROR_DELETE_POSITIONHISTORY_FAIL, nil)
+		return
+	}
+
+	err = positionhistoryservice.DeleteByID()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_DELETE_POSITIONHISTORY_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, nil)
+}
+
+func Deletecadremod(c *gin.Context) {
+	appG := app.Gin{C: c}
+	id := c.Query("user_id")
+
+	cadreservice := cadre_service.CadreInfo_mod{
+		ID: id,
+	}
+	exists, err := cadreservice.ExistByID()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_DELETE_CADRE_FAIL, nil)
+		return
+	}
+	if !exists {
+		appG.Response(http.StatusOK, e.ERROR_DELETE_CADRE_FAIL, nil)
+		return
+	}
+
+	err = cadreservice.DeleteByID()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_DELETE_CADRE_FAIL, nil)
 		return
 	}
 

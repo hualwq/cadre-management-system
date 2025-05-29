@@ -12,6 +12,7 @@ type ResumeEntry struct {
 }
 
 type ResumeEntry_mod struct {
+	ID           int    `json:"id"`
 	CadreID      string `json:"user_id"`
 	StartDate    string `json:"start_date"`           // 格式：2007.09 或 2019.12
 	EndDate      string `json:"end_date"`             // 格式：2011.07 或 "至今"
@@ -41,6 +42,10 @@ type ResumeEntryModifications struct {
 	CadreID string
 }
 
+func (rem *ResumeEntry_mod) ExistByID() (bool, error) {
+	return models.ExistResumeEntryModificationByID(rem.ID)
+}
+
 func (rem *ResumeEntryModifications) ExistByID() (bool, error) {
 	return models.ExistResumeEntryModificationByID(rem.ID)
 }
@@ -55,4 +60,16 @@ func (rem *ResumeEntryModifications) GetByCadreID() ([]models.ResumeEntry_modifi
 
 func (rem *ResumeEntryModifications) DeleteByID() error {
 	return models.DeleteResumeEntryModificationByID(rem.ID)
+}
+
+func (r *ResumeEntry_mod) EditResumeMod() error {
+	data := map[string]interface{}{
+		"user_id":      r.CadreID,
+		"start_date":   r.StartDate,
+		"end_date":     r.EndDate,
+		"organization": r.Organization,
+		"department":   r.Department,
+		"position":     r.Position,
+	}
+	return models.EditResumeEntryModification(r.ID, data)
 }

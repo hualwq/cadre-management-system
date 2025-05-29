@@ -107,10 +107,31 @@ func AddCadreInfo_mod(data map[string]interface{}) error {
 
 func ExistCadreInfoByID(id string) (bool, error) {
 	var count int64
-	err := db.Model(&Cadre_Modification{}).Where("user_id = ?", id).Count(&count).Error
+	err := db.Model(&Cadre_Modification{}).Where("user_id = ? and is_audited = ?", id, 0).Count(&count).Error
 	return count > 0, err
 }
 
 func EditCadreInfoByID(id string, data map[string]interface{}) error {
 	return db.Model(&Cadre_Modification{}).Where("user_id = ?", id).Updates(data).Error
+}
+
+func DeleteCadreInfoByID(id string) error {
+
+	if err := db.Where("user_id = ? and is_audited = ?", id, 0).Delete(&FamilyMember{}).Error; err != nil {
+		return err
+	}
+
+	if err := db.Where("user_id = ? and is_audited = ?", id, 0).Delete(&ResumeEntry_modifications{}).Error; err != nil {
+		return err
+	}
+
+	if err := db.Where("user_id = ? and is_audited = ?", id, 0).Delete(&PositionHistory_mod{}).Error; err != nil {
+		return err
+	}
+
+	if err := db.Where("user_id = ? and is_audited = ?", id, 0).Delete(&Cadre_Modification{}).Error; err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -44,6 +44,18 @@ func (f *FamilyMember_mod) ExistByID() (bool, error) {
 	return models.ExistByID(f.ID)
 }
 
+func (fm *FamilyMember_mod) EditFamilyMemberMod() error {
+	data := map[string]interface{}{
+		"user_id":          fm.CadreID,
+		"relation":         fm.Relation,
+		"name":             fm.Name,
+		"birth_date":       fm.BirthDate,
+		"political_status": fm.PoliticalStatus,
+		"work_unit":        fm.WorkUnit,
+	}
+	return models.EditFamilyMemberModification(fm.ID, data)
+}
+
 type FamilyMemberModifications struct {
 	ID int
 }

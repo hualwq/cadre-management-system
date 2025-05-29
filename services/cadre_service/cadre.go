@@ -153,6 +153,10 @@ func (c *CadreInfo_mod) CalculateAge() error {
 	return nil
 }
 
+func (c *CadreInfo_mod) DeleteByID() error {
+	return models.DeleteCadreInfoByID(c.ID)
+}
+
 func (c *CadreInfo_mod) GetCadreInfo() (*models.Cadre_Modification, error) {
 	return models.GetCadre(c.ID)
 }
@@ -355,4 +359,47 @@ func (p *GetPositionHistory_mod) getMaps() map[string]interface{} {
 	}
 
 	return maps
+}
+
+type PositionHistoryModEdit struct {
+	ID           int    `json:"id"`
+	CadreID      string `json:"user_id"`
+	Name         string `json:"name"`
+	PhoneNumber  string `json:"phone_number"`
+	Email        string `json:"email"`
+	Department   string `json:"department"`
+	Category     string `json:"category"`
+	Office       string `json:"office"`
+	AcademicYear string `json:"academic_year"`
+	Positions    string `json:"positions"`
+	Year         uint   `json:"applied_at_year"`
+	Month        uint   `json:"applied_at_month"`
+	Day          uint   `json:"applied_at_day"`
+}
+
+func (p *PositionHistoryModEdit) EditPositionhistorymod() error {
+	data := map[string]interface{}{
+		"user_id":          p.CadreID,
+		"name":             p.Name,
+		"phone_number":     p.PhoneNumber,
+		"email":            p.Email,
+		"department":       p.Department,
+		"category":         p.Category,
+		"office":           p.Office,
+		"academic_year":    p.AcademicYear,
+		"positions":        p.Positions,
+		"applied_at_year":  p.Year,
+		"applied_at_month": p.Month,
+		"applied_at_day":   p.Day,
+	}
+
+	return models.EditPositionHistoryMod(p.ID, data)
+}
+
+func (p *PositionHistoryModEdit) ExistByID() (bool, error) {
+	return models.ExistPositionHistoryByID(p.ID)
+}
+
+func (p *PositionHistoryModEdit) DeleteByID() error {
+	return models.DeleteFamilyMemberModificationByID(p.ID)
 }

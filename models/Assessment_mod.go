@@ -28,18 +28,6 @@ func (Assessment_mod) TableName() string {
 	return "cadm_assessments_mod"
 }
 
-func ExistAssessmentModByID(id int) (bool, error) {
-	var assessment Assessment_mod
-	err := db.Select("id").Where("id = ?", id).First(&assessment).Error
-	if err != nil && err != gorm.ErrRecordNotFound {
-		return false, err
-	}
-	if assessment.ID > 0 {
-		return true, nil
-	}
-	return false, nil
-}
-
 func GetAssessmentsMod(pageNum int, pageSize int, maps interface{}) ([]Assessment_mod, error) {
 	var (
 		assessments []Assessment_mod
@@ -155,4 +143,31 @@ func GetAssesement(id int) (*Assessment_mod, error) {
 	}
 
 	return &assesement, nil
+}
+
+func DeleteAssessmentModByID(id int) error {
+	if id <= 0 {
+		return errors.New("无效的考核记录 ID")
+	}
+	result := db.Where("id = ?", id).Delete(&Assessment_mod{})
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return errors.New("未找到匹配的考核记录")
+	}
+	return nil
+}
+
+func ExistAssessmentModByID(id int) (bool, error) {
+	var count int64
+	err := db.Model(&Assessment_mod{}).Where("id = ? and is_audited = false", id).Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+func EditAssessmentModByID(id int, data map[string]interface{}) error {
+	return db.Model(&Assessment_mod{}).Where("id = ?", id).Updates(data).Error
 }

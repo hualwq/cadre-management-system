@@ -54,6 +54,53 @@ func (p *PositionHistory) AddPositionHistory() error {
 	return nil
 }
 
-func (s *PositionHistoryService) GetPositionHistoryList_page(page, pageSize int) ([]models.PositionHistoryBrief_mod, int64, error) {
-	return models.GetPositionhistoryList_mod_page(page, pageSize)
+type GetPosexpModID struct {
+	ID int
+}
+
+func (g *GetPosexpModID) ExistByID() (bool, error) {
+	return models.ExistPosexpModByID(g.ID)
+}
+
+func (g *GetPosexpModID) Get() (*models.Posexp_mod, error) {
+	return models.GetPosexpModByID(g.ID)
+}
+
+type GetPoexpModByCadreID struct {
+	CadreID string
+}
+
+func (g *GetPoexpModByCadreID) ExistByCadreID() (bool, error) {
+	return models.ExistPoexpModByCadreID(g.CadreID)
+}
+
+func (g *GetPoexpModByCadreID) Get() ([]models.Posexp_mod, error) {
+	return models.GetPoexpModByCadreID(g.CadreID)
+}
+
+type Comfirmpoexp struct {
+	CadreID string
+}
+
+func (c *Comfirmpoexp) Comfirmpoexp() error {
+	if err := models.Comfirmpoexp(c.CadreID); err != nil {
+		return err
+	}
+	return nil
+}
+
+type DeletePosexpByID struct {
+	ID int
+}
+
+func (d *DeletePosexpByID) Delete() error {
+	return models.DeletePosexpByID(d.ID)
+}
+
+type DeletePosexpModByID struct {
+	ID int
+}
+
+func (d *DeletePosexpModByID) DeleteMod() error {
+	return models.DeletePosexpByID(d.ID)
 }

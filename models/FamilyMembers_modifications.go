@@ -59,7 +59,7 @@ func ExistByID(id int) (bool, error) {
 
 	// 查询是否存在匹配的记录
 	err := db.Model(&FamilyMember_modifications{}).
-		Where("id = ?", id).
+		Where("id = ? and is_audited = ?", id, 0).
 		Count(&count).
 		Error
 
@@ -71,10 +71,22 @@ func ExistByID(id int) (bool, error) {
 	return count > 0, nil
 }
 
+func EditFamilyMemberModification(id int, data map[string]interface{}) error {
+	var familyMember FamilyMember_modifications
+	result := db.Model(&familyMember).Where("id = ?", id).Updates(data)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
 // ExistFamilyMemberModificationByID checks if a family member modification exists based on ID
 func ExistFamilyMemberModificationByID(id int) (bool, error) {
 	var member FamilyMember_modifications
-	err := db.Select("id").Where("id = ?", id).First(&member).Error
+	err := db.Select("id").Where("id = ?  and is_audited = ?", id, 0).First(&member).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return false, err
 	}

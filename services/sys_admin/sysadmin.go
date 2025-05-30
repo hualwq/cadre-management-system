@@ -9,6 +9,11 @@ type User struct {
 	Role string `json:"role"`
 }
 
+type ChangeUserRole struct {
+	CadreID string `json:"user_id"`
+	Role    string `json:"role"`
+}
+
 type GetUser struct {
 	PageNum  int
 	PageSize int
@@ -50,4 +55,8 @@ func (u *GetUser) GetUserByPage(page, pageSize int) ([]User, error) {
 	}
 
 	return serviceUsers, nil
+}
+
+func (s *ChangeUserRole) ChangeUserRole(userID, newRole string) error {
+	return models.ChangeUserRole(userID, newRole)
 }

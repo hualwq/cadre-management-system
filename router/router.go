@@ -20,7 +20,7 @@ func InitRouter() *gin.Engine {
 	apiv1 := r.Group("/cadre")
 	apiv1.Use(middleware.JWT()) //普通干部
 	{
-		apiv1.POST("/info", middleware.RoleMiddleware("cadre"), v1.AddCadreInfo_mod)
+		apiv1.POST("/cadreinfo", middleware.RoleMiddleware("cadre"), v1.AddCadreInfo_mod)
 		apiv1.POST("/assessment", middleware.RoleMiddleware("cadre"), v1.AddAssessment_mod)
 		apiv1.POST("/positionhistory", middleware.RoleMiddleware("cadre"), v1.AddPositionHistory_mod)
 		apiv1.POST("/yearposition", middleware.RoleMiddleware("cadre"), v1.Addyearposition_mod)
@@ -28,7 +28,7 @@ func InitRouter() *gin.Engine {
 		apiv1.POST("/familymember", middleware.RoleMiddleware("cadre"), v1.Addfamilymember_mod)
 		apiv1.POST("/image", middleware.RoleMiddleware("cadre"), v1.UploadImage)
 
-		apiv1.PUT("/cadre", middleware.RoleMiddleware("cadre"), v1.EditInfo_mod)
+		apiv1.PUT("/cadreinfo", middleware.RoleMiddleware("cadre"), v1.EditInfo_mod)
 		apiv1.PUT("/resume", middleware.RoleMiddleware("cadre"), v1.EditResume_Mod)
 		apiv1.PUT("/positionhistory", middleware.RoleMiddleware("cadre"), v1.EditPh_Mod)
 		apiv1.PUT("/familymember", middleware.RoleMiddleware("cadre"), v1.Editfamilymember_mod)
@@ -81,6 +81,8 @@ func InitRouter() *gin.Engine {
 	{
 		apiv3.GET("/userbypage", middleware.RoleMiddleware("sysadmin"), v1.GetUserByPage)
 		apiv3.GET("/alluser", middleware.RoleMiddleware("sysadmin"), v1.GetAllUser)
+
+		apiv3.POST("/changerole", middleware.RoleMiddleware("sysadmin"), v1.ChangeUserRole)
 	}
 
 	return r

@@ -2,10 +2,6 @@ package cadre_service
 
 import (
 	"cadre-management/models"
-	"fmt"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type PositionHistory_mod struct {
@@ -120,39 +116,6 @@ type Posexp_mod struct {
 	Pos        string `json:"position"`
 }
 
-func (c *CadreInfo_mod) CalculateAge() error {
-	if c.BirthDate == "" {
-		return fmt.Errorf("出生日期为必选项")
-	}
-
-	// 分割字符串为年和月
-	parts := strings.Split(c.BirthDate, ".")
-	if len(parts) != 2 {
-		return fmt.Errorf("invalid birth date format, expected 'YYYY.M'")
-	}
-
-	year, err := strconv.Atoi(parts[0])
-	if err != nil {
-		return fmt.Errorf("invalid year in birth date: %v", err)
-	}
-
-	month, err := strconv.Atoi(parts[1])
-	if err != nil || month < 1 || month > 12 {
-		return fmt.Errorf("invalid month in birth date: %v", err)
-	}
-
-	now := time.Now()
-	age := now.Year() - year
-
-	// 如果今年生日还没到，年龄减1
-	if int(now.Month()) < month || (int(now.Month()) == month && now.Day() < 1) {
-		age--
-	}
-
-	c.Age = uint8(age)
-	return nil
-}
-
 func (c *CadreInfo_mod) DeleteByID() error {
 	return models.DeleteCadreInfoByID(c.ID)
 }
@@ -189,8 +152,6 @@ func (c *CadreInfo_mod) AddCadreInfo() error {
 		"approval_authority":          c.ApprovalAuthority,
 		"administrative_appointment":  c.AdministrativeAppointment,
 	}
-
-	c.CalculateAge()
 
 	if err := models.AddCadreInfo_mod(Cinfo); err != nil {
 		return err

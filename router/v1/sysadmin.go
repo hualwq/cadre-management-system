@@ -11,6 +11,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type ChangeUserROleForm struct {
+	CadreID string `json:"user_id"`
+	Role    string `json:"role"`
+}
+
 func GetUserByPage(c *gin.Context) {
 	appG := app.Gin{C: c}
 	pageNumstr := c.Query("page")
@@ -52,4 +57,35 @@ func GetAllUser(c *gin.Context) {
 
 	// 返回成功响应
 	appG.Response(http.StatusOK, e.SUCCESS, users)
+}
+
+func ChangeUserRole(c *gin.Context) {
+	var (
+		appG = app.Gin{C: c}
+		form ChangeUserROleForm
+	)
+
+	httpCode, errCode := app.BindAndValid(c, &form)
+	if errCode != e.SUCCESS {
+		appG.Response(httpCode, errCode, nil)
+		return
+	}
+
+	// 调用服务层方法
+	userService := sys_admin.ChangeUserRole{
+		CadreID: form.CadreID,
+		Role:    form.Role,
+	}
+	err := userService.ChangeUserRole(userService.CadreID, userService.Role)
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// 响应成功
+	appG.Response(http.StatusOK, e.SUCCESS, gin.H{
+		"message": "用户角色更改成功",
+	})
 }

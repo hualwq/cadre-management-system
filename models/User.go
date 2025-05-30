@@ -148,3 +148,33 @@ func GetUserByID(userID string) (*User, error) {
 	}
 	return &user, nil
 }
+
+func ChangeUserRole(userID, newRole string) error {
+	if userID == "" || newRole == "" {
+		return errors.New("用户 ID 和新角色不能为空")
+	}
+
+	// 检查新角色是否合法
+	validRoles := []string{"admin", "cadre", "sysadmin"}
+	valid := false
+	for _, role := range validRoles {
+		if role == newRole {
+			valid = true
+			break
+		}
+	}
+	if !valid {
+		return errors.New("无效的角色")
+	}
+
+	// 更新用户角色
+	var user User
+	result := db.Model(&user).Where("user_id = ?", userID).Update("role", newRole)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}

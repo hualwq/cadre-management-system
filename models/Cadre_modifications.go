@@ -4,6 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strconv"
+	"strings"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -69,6 +72,39 @@ func GetCadre(cadreID string) (*Cadre_Modification, error) {
 	return &cadreInfo, nil
 }
 
+func (c *Cadre_Modification) CalculateAge() error {
+	if c.BirthDate == "" {
+		return fmt.Errorf("出生日期为必选项")
+	}
+
+	// 分割字符串为年和月
+	parts := strings.Split(c.BirthDate, ".")
+	if len(parts) != 2 {
+		return fmt.Errorf("invalid birth date format, expected 'YYYY.M'")
+	}
+
+	year, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return fmt.Errorf("invalid year in birth date: %v", err)
+	}
+
+	month, err := strconv.Atoi(parts[1])
+	if err != nil || month < 1 || month > 12 {
+		return fmt.Errorf("invalid month in birth date: %v", err)
+	}
+
+	now := time.Now()
+	age := now.Year() - year
+
+	// 如果今年生日还没到，年龄减1
+	if int(now.Month()) < month || (int(now.Month()) == month && now.Day() < 1) {
+		age--
+	}
+
+	c.Age = uint8(age)
+	return nil
+}
+
 func AddCadreInfo_mod(data map[string]interface{}) error {
 	cadreInfo := Cadre_Modification{
 		ID:                        data["user_id"].(string),
@@ -96,6 +132,10 @@ func AddCadreInfo_mod(data map[string]interface{}) error {
 		ReportingUnit:             data["reporting_unit"].(string),
 		ApprovalAuthority:         data["approval_authority"].(string),
 		AdministrativeAppointment: data["administrative_appointment"].(string),
+	}
+
+	if err := cadreinfo.CalculateAge(); err != nil {
+		return err
 	}
 
 	if err := db.Create(&cadreInfo).Error; err != nil {

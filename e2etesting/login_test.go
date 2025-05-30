@@ -5,24 +5,36 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
+	"cadre-management/models"
+	"cadre-management/pkg/logging"
 	"cadre-management/pkg/setting"
+	"cadre-management/pkg/utils"
 	"cadre-management/router"
 
-	"github.com/gin-gonic/gin"
+	// "github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestUserLogin(t *testing.T) {
-	// 初始化系统
+func init() {
+	_, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	if err := os.Chdir("../"); err != nil {
+		panic(err)
+	}
 	setting.Setup()
+	models.Setup()
+	logging.Setup()
+	utils.Setup()
+}
 
-	// 创建一个新的Gin引擎
-	r := gin.Default()
-
-	// 注册路由
-	router.InitRouter()
+func TestUserLogin(t *testing.T) {
+	// 注册路由并获取返回的 Gin 引擎实例
+	r := router.InitRouter()
 
 	// 准备登录数据
 	loginData := map[string]string{
@@ -32,7 +44,7 @@ func TestUserLogin(t *testing.T) {
 	jsonData, err := json.Marshal(loginData)
 	assert.NoError(t, err)
 
-	// 创建一个HTTP请求
+	// 创建一个 HTTP 请求
 	req, err := http.NewRequest("POST", "/login", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
 	assert.NoError(t, err)

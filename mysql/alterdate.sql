@@ -49,3 +49,9 @@
 
 -- ALTER TABLE cadm_family_members CHANGE cadre_id user_id varchar(50);
 -- ALTER TABLE cadm_family_members_mod CHANGE cadre_id user_id varchar(50);
+
+-- ALTER TABLE cadm_cadreinfo_mod DROP PRIMARY KEY;
+-- ALTER TABLE cadm_cadreinfo DROP PRIMARY KEY;
+
+ALTER TABLE cadm_cadreinfo_mod ADD COLUMN photourl VARCHAR(100);  -- 或其他适当的数据类型
+ALTER TABLE cadm_cadreinfo ADD COLUMN photourl VARCHAR(100);      -- 或其他适当的数据类型

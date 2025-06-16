@@ -41,28 +41,6 @@ func (Posexp_mod) TableName() string {
 	return "cadm_posexp_mod"
 }
 
-func GetPositionHistory_mod(cadreID string) (*PositionHistory_mod, error) {
-	// 查找 PositionHistory 表中该干部的任职记录
-	var position PositionHistory_mod
-	if err := db.Where("id = ?", cadreID).First(&position).Error; err != nil {
-		return nil, fmt.Errorf("failed to find position history: %v", err)
-	}
-
-	// 查找 cadre_info 表获取姓名、电话、邮箱等信息
-	var cadre CadreInfo
-	if err := db.Where("id = ?", cadreID).First(&cadre).Error; err != nil {
-		return nil, fmt.Errorf("failed to find cadre info: %v", err)
-	}
-
-	// 补充信息
-	position.Name = cadre.Name
-	position.CadreID = cadreID
-	position.PhoneNumber = cadre.Phone
-	position.Email = cadre.Email
-
-	return &position, nil
-}
-
 func AddPositionHistory_mod(data map[string]interface{}) error {
 	// 从 data 中解析直接提供的字段
 	cadreID, ok := data["user_id"].(string)

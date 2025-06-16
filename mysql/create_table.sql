@@ -29,7 +29,6 @@
 --   `reporting_unit` varchar(200) DEFAULT NULL COMMENT '呈报单位',
 --   `approval_authority` text DEFAULT NULL COMMENT '审批机关',
 --   `administrative_appointment` text DEFAULT NULL COMMENT '行政职务任命',
---   PRIMARY KEY (`user_id`),
 --   INDEX `idx_name` (`name`),
 --   INDEX `idx_phone` (`phone`)
 -- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='干部信息表';
@@ -65,7 +64,6 @@
 --   `reporting_unit` varchar(200) DEFAULT NULL COMMENT '呈报单位',
 --   `approval_authority` text DEFAULT NULL COMMENT '审批机关',
 --   `administrative_appointment` text DEFAULT NULL COMMENT '行政职务任命',
---   PRIMARY KEY (`user_id`),
 --   INDEX `idx_name` (`name`),
 --   INDEX `idx_phone` (`phone`)
 -- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='干部信息表';

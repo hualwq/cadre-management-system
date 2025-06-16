@@ -2,6 +2,7 @@ package setting
 
 import (
 	"log"
+	"strings"
 	"time"
 
 	"github.com/go-ini/ini"
@@ -29,6 +30,8 @@ type App struct {
 	LogSaveName string
 	LogFileExt  string
 	TimeFormat  string
+
+	Kafka KafkaConfig
 }
 
 var AppSetting = &App{}
@@ -53,6 +56,11 @@ type Database struct {
 	TablePrefix string
 }
 
+type KafkaConfig struct {
+	Brokers []string
+	Topic   string
+}
+
 var DatabaseSetting = &Database{}
 
 var cfg *ini.File
@@ -72,6 +80,10 @@ func Setup() {
 	AppSetting.ImageMaxSize = AppSetting.ImageMaxSize * 1024 * 1024
 	ServerSetting.ReadTimeout = ServerSetting.ReadTimeout * time.Second
 	ServerSetting.WriteTimeout = ServerSetting.WriteTimeout * time.Second
+
+	brokersStr := cfg.Section("app").Key("KafkaBrokers").String()
+	AppSetting.Kafka.Brokers = strings.Split(brokersStr, ",")
+	AppSetting.Kafka.Topic = cfg.Section("app").Key("KafkaTopic").String()
 }
 
 // mapTo 函数用于将配置文件中的指定节的配置项映射到对应的结构体中

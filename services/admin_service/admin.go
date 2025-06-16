@@ -29,10 +29,6 @@ func (p *PositionHistory) ConfirmPositionHistory() error {
 	return nil
 }
 
-func (p *PositionHistory_mod) GetPositionHistory_mod(CadreID string) (*models.PositionHistory_mod, error) {
-	return models.GetPositionHistory_mod(CadreID)
-}
-
 func (p *PositionHistory) AddPositionHistory() error {
 	positionHistory := map[string]interface{}{
 		"cadre_id":      p.CadreID,

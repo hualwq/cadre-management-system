@@ -14,6 +14,9 @@ import (
 	"cadre-management/services/cadre_service"
 	"cadre-management/services/familymember_service"
 	"cadre-management/services/resume_service"
+	"context"
+
+	"github.com/segmentio/kafka-go"
 
 	"github.com/gin-gonic/gin"
 )
@@ -845,4 +848,43 @@ func Deletecadremod(c *gin.Context) {
 	}
 
 	appG.Response(http.StatusOK, e.SUCCESS, nil)
+}
+
+// GetCadreMessages 干部获取消息
+func GetCadreMessages(c *gin.Context) {
+	appG := app.Gin{C: c}
+
+	// 假设从请求参数中获取干部 ID
+	cadreID := c.Query("cadre_id")
+	if cadreID == "" {
+		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
+		return
+	}
+
+	// 创建 Kafka 读取器
+	r := kafka.NewReader(kafka.ReaderConfig{
+		Brokers: setting.AppSetting.Kafka.Brokers,
+		Topic:   setting.AppSetting.Kafka.Topic,
+		GroupID: "cadre-group",
+	})
+	defer r.Close()
+
+	var messages []map[string]string
+	for {
+		msg, err := r.ReadMessage(context.Background())
+		if err != nil {
+			break
+		}
+
+		recipientID := string(msg.Key)
+		if recipientID == cadreID {
+			message := string(msg.Value)
+			messages = append(messages, map[string]string{
+				"recipient_id": recipientID,
+				"message":      message,
+			})
+		}
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, messages)
 }

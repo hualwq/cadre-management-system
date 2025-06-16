@@ -9,6 +9,7 @@ import (
 	"cadre-management/services/assessment_mod_service"
 	"cadre-management/services/cadre_service"
 	"cadre-management/services/familymember_service"
+	"cadre-management/services/message_service"
 	"cadre-management/services/resume_service"
 	"net/http"
 	"strconv"
@@ -382,24 +383,6 @@ func Comfirmpoexp(c *gin.Context) {
 	appG.Response(http.StatusOK, e.SUCCESS, nil)
 }
 
-func GetPositionHistory_mod(c *gin.Context) {
-	appG := app.Gin{C: c}
-	cadreID := c.Query("id")
-	if cadreID == "" {
-		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
-		return
-	}
-
-	service := admin_service.PositionHistory_mod{}
-	positionHistory, err := service.GetPositionHistory_mod(cadreID)
-	if err != nil {
-		appG.Response(http.StatusInternalServerError, e.ERROR, nil)
-		return
-	}
-
-	appG.Response(http.StatusOK, e.SUCCESS, positionHistory)
-}
-
 func GetPositionHistoriesMod(c *gin.Context) {
 	appG := app.Gin{C: c}
 	name := c.Query("name")
@@ -746,4 +729,32 @@ func Comfirmfamilymember(c *gin.Context) {
 	}
 
 	appG.Response(http.StatusOK, e.SUCCESS, nil)
+}
+
+func SendMessage(c *gin.Context) {
+	appG := app.Gin{C: c}
+
+	// 绑定请求参数
+	var form struct {
+		RecipientID string `json:"recipient_id" binding:"required"`
+		Message     string `json:"message" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&form); err != nil {
+		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
+		return
+	}
+
+	// 发送消息
+	err := message_service.SendMessage(form.RecipientID, form.Message)
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// 发送成功响应
+	appG.Response(http.StatusOK, e.SUCCESS, gin.H{
+		"message": "消息发送成功",
+	})
 }

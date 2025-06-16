@@ -13,6 +13,7 @@ import (
 
 type Cadre_Modification struct {
 	ID                        string `gorm:"primaryKey;type:varchar(50);column:user_id" json:"user_id"`
+	PhotoUrl                  string `gorm:"type:varchar(100); column:photourl" json:"photourl"`
 	Name                      string `gorm:"type:varchar(50); column:name" json:"name"`
 	Gender                    string `gorm:"type:ENUM('男','女'); column:gender" json:"gender"`
 	BirthDate                 string `gorm:"type:date; column:birth_date" json:"birth_date"`
@@ -134,7 +135,7 @@ func AddCadreInfo_mod(data map[string]interface{}) error {
 		AdministrativeAppointment: data["administrative_appointment"].(string),
 	}
 
-	if err := cadreinfo.CalculateAge(); err != nil {
+	if err := cadreInfo.CalculateAge(); err != nil {
 		return err
 	}
 

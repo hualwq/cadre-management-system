@@ -6,11 +6,14 @@ import (
 	v1 "cadre-management/router/v1"
 	"net/http"
 
+	"github.com/gin-contrib/cors"
+
 	"github.com/gin-gonic/gin"
 )
 
 func InitRouter() *gin.Engine {
 	r := gin.New()
+	r.Use(cors.Default())
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
 
@@ -41,6 +44,7 @@ func InitRouter() *gin.Engine {
 		apiv1.DELETE("/posexp", middleware.RoleMiddleware("cadre"), v1.DeletePosexpmodbyID)
 		apiv1.DELETE("/assessment", middleware.RoleMiddleware("cadre"), v1.DeleteAssessmentmodbyID)
 
+		apiv1.GET("/getmessage", middleware.RoleMiddleware("cadre"), v1.GetCadreMessages)
 	}
 	apiv2 := r.Group("/admin")
 	apiv2.Use(middleware.JWT()) // 管理员
@@ -50,7 +54,6 @@ func InitRouter() *gin.Engine {
 		apiv2.GET("/phbypage", middleware.RoleMiddleware("admin", "sysadmin", "cadre"), v1.GetPositionHistories)
 		apiv2.GET("/cadrebypage", middleware.RoleMiddleware("admin", "sysadmin", "cadre"), v1.GetCadreInfoModByPage)
 
-		apiv2.GET("/phbyid", middleware.RoleMiddleware("admin", "sysadmin", "cadre"), v1.GetPositionHistory_mod)
 		apiv2.GET("/assmodbyid", middleware.RoleMiddleware("admin", "sysadmin", "cadre"), v1.GetAssessmentsModByID)
 		apiv2.GET("/phmodbyid", middleware.RoleMiddleware("admin", "sysadmin", "cadre"), v1.GetPositionHistoryMod)
 		apiv2.GET("/fmmodbyid", middleware.RoleMiddleware("admin", "sysadmin", "cadre"), v1.GetFamilyMemberModification)
@@ -68,6 +71,7 @@ func InitRouter() *gin.Engine {
 		apiv2.POST("/poexp", middleware.RoleMiddleware("admin", "sysadmin"), v1.Comfirmpoexp)
 		apiv2.POST("/resume", middleware.RoleMiddleware("admin", "sysadmin"), v1.ComfirmResume)
 		apiv2.POST("/familymember", middleware.RoleMiddleware("admin", "sysadmin"), v1.Comfirmfamilymember)
+		apiv2.POST("/sendmessage", middleware.RoleMiddleware("admin", "sysadmin"), v1.SendMessage)
 
 		apiv2.DELETE("/assessment", middleware.RoleMiddleware("admin", "sysadmin"), v1.DeleteAssessmentbyID)
 		apiv2.DELETE("/poexp", middleware.RoleMiddleware("admin", "sysadmin"), v1.DeletePosexpByID)

@@ -21,7 +21,7 @@ func GenerateToken(userid, password, role string) (string, error) {
 	expireTime := nowTime.Add(time.Duration(setting.AppSetting.JwtExptime) * time.Hour)
 
 	claims := Claims{
-		EncodeMD5(userid),
+		userid,
 		EncodeMD5(password),
 		role,
 		jwt.StandardClaims{

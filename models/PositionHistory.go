@@ -21,6 +21,7 @@ type PositionHistory struct {
 	Year         uint   `gorm:"not null;column:applied_at_year;type:int unsigned" json:"applied_at_year"`
 	Month        uint   `gorm:"column:applied_at_month;type:tinyint unsigned" json:"applied_at_month"`
 	Day          uint   `gorm:"column:applied_at_day;type:tinyint unsigned" json:"applied_at_day"`
+	PosID        int    `gorm:"not null;column:pos_id" json:"pos_id"`
 }
 
 type Posexp struct {

@@ -171,3 +171,5 @@ func ExistAssessmentModByID(id int) (bool, error) {
 func EditAssessmentModByID(id int, data map[string]interface{}) error {
 	return db.Model(&Assessment_mod{}).Where("id = ?", id).Updates(data).Error
 }
+
+

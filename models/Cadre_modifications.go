@@ -54,7 +54,6 @@ func GetCadre(cadreID string) (*Cadre_Modification, error) {
 	var cadreInfo Cadre_Modification
 
 	err := db.
-		Preload("CadreInfo").
 		Select("*"). // 或者指定具体字段，如："user_id, name, department"
 		Where("user_id = ?", cadreID).
 		First(&cadreInfo).
@@ -203,4 +202,34 @@ func GetCadreInfoModTotal(maps interface{}) (int64, error) {
 	}
 
 	return count, nil
+}
+
+// models/Cadre_modifications.go 或其他合适的模型文件
+func UpdateCadrePhotoURL(cadreID string, photoURL string) error {
+	if cadreID == "" {
+		return fmt.Errorf("干部ID不能为空")
+	}
+
+	err := db.Model(&Cadre_Modification{}).Where("user_id = ?", cadreID).Update("photourl", photoURL).Error
+	if err != nil {
+		log.Printf("更新干部图片URL失败，干部ID: %s，错误: %v", cadreID, err)
+		return fmt.Errorf("更新干部图片URL失败: %v", err)
+	}
+
+	return nil
+}
+
+func UpdateCadreInfoModPhotoURL(cadreid, photoURL string) error {
+	var mod Cadre_Modification
+	result := db.Where("user_id = ?", cadreid).First(&mod)
+	if result.Error != nil {
+		return fmt.Errorf("未找到待更新的干部信息修改记录: %v", result.Error)
+	}
+
+	mod.PhotoUrl = photoURL
+	if err := db.Save(&mod).Error; err != nil {
+		return fmt.Errorf("更新干部信息修改记录的 photourl 字段失败: %v", err)
+	}
+
+	return nil
 }

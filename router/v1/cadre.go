@@ -6,6 +6,7 @@ import (
 	"cadre-management/pkg/setting"
 	"cadre-management/pkg/utils"
 	"net/http"
+	"strconv"
 
 	"github.com/astaxie/beego/validation"
 	"github.com/unknwon/com"
@@ -22,7 +23,6 @@ import (
 )
 
 type AddCadreInfoForm_modifications struct {
-	ID                        string `json:"user_id" binding:"required"`
 	Name                      string `json:"name" binding:"required"`
 	Gender                    string `json:"gender" binding:"required"`
 	BirthDate                 string `json:"birth_date" binding:"required"`
@@ -232,8 +232,22 @@ func AddCadreInfo_mod(c *gin.Context) {
 		return
 	}
 
+	// 从上下文中获取 user_id
+	userID, exists := c.Get("user_id")
+	if !exists {
+		appG.Response(http.StatusUnauthorized, e.ERROR_USER_NOT_LOGGED_IN, gin.H{"message": "请重新登录"})
+		return
+	}
+
+	// 确保 userID 是字符串类型
+	userIDStr, ok := userID.(string)
+	if !ok {
+		appG.Response(http.StatusInternalServerError, e.ERROR_USER_NOT_LOGGED_IN, gin.H{"message": "请重新登录"})
+		return
+	}
+
 	cadreService := cadre_service.CadreInfo_mod{
-		ID:                        form.ID,
+		ID:                        userIDStr,
 		Name:                      form.Name,
 		Gender:                    form.Gender,
 		BirthDate:                 form.BirthDate,
@@ -887,4 +901,137 @@ func GetCadreMessages(c *gin.Context) {
 	}
 
 	appG.Response(http.StatusOK, e.SUCCESS, messages)
+}
+
+func GetPositionHistoryModsByPage(c *gin.Context) {
+	appG := app.Gin{C: c}
+	// 从上下文中获取 user_id
+	userID, exists := c.Get("user_id")
+	if !exists {
+		appG.Response(http.StatusUnauthorized, e.ERROR_USER_CHECK_TOKEN_FAIL, nil)
+		return
+	}
+	userIDStr, ok := userID.(string)
+	if !ok {
+		appG.Response(http.StatusUnauthorized, e.ERROR_USER_CHECK_TOKEN_FAIL, nil)
+		return
+	}
+
+	pageNum := utils.GetPage(c)
+	pageSize := setting.AppSetting.PageSize
+
+	service := cadre_service.GetPositionHistory_mod{
+		UserID:   userIDStr,
+		PageNum:  pageNum,
+		PageSize: pageSize,
+	}
+
+	positionHistoryMods, err := service.GetAll()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_GET_POSITION_HISTORIES_FAIL, nil)
+		return
+	}
+
+	count, err := service.Count()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_GET_POSITION_HISTORIES_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, map[string]interface{}{
+		"lists": positionHistoryMods,
+		"total": count,
+	})
+}
+
+func GetAssessmentModsByPage(c *gin.Context) {
+	appG := app.Gin{C: c}
+	// 从上下文中获取 user_id
+	userID, exists := c.Get("user_id")
+	if !exists {
+		appG.Response(http.StatusUnauthorized, e.ERROR_USER_CHECK_TOKEN_FAIL, nil)
+		return
+	}
+	userIDStr, ok := userID.(string)
+	if !ok {
+		appG.Response(http.StatusUnauthorized, e.ERROR_USER_CHECK_TOKEN_FAIL, nil)
+		return
+	}
+
+	pageNum := utils.GetPage(c)
+	pageSize := setting.AppSetting.PageSize
+
+	name := c.Query("name")
+	department := c.Query("department")
+	auditedStr := c.Query("audited")
+	var audited *bool
+	if auditedStr != "" {
+		boolValue, err := strconv.ParseBool(auditedStr)
+		if err == nil {
+			audited = &boolValue
+		}
+	}
+
+	service := assessment_mod_service.Assessment_mod{
+		UserID:     userIDStr,
+		Name:       name,
+		Department: department,
+		Audited:    audited,
+		PageNum:    pageNum,
+		PageSize:   pageSize,
+	}
+
+	assessmentMods, err := service.GetAll()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_GET_ASSESSMENTS_FAIL, nil)
+		return
+	}
+
+	count, err := service.Count()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_GET_ASSESSMENTS_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, map[string]interface{}{
+		"lists": assessmentMods,
+		"total": count,
+	})
+}
+
+func GetPosExpByPosID(c *gin.Context) {
+	appG := app.Gin{C: c}
+
+	posIDStr := c.Query("posid")
+	posID, err := strconv.Atoi(posIDStr)
+	if err != nil {
+		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
+		return
+	}
+
+	pageNum := utils.GetPage(c)
+	pageSize := setting.AppSetting.PageSize
+
+	service := cadre_service.Posexp_mod{
+		PosID:    posID,
+		PageNum:  pageNum,
+		PageSize: pageSize,
+	}
+
+	posExps, err := service.GetAll()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_GET_POEXPMOD_FAIL, nil)
+		return
+	}
+
+	count, err := service.Count()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR_GET_POEXPMOD_FAIL, nil)
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, map[string]interface{}{
+		"lists": posExps,
+		"total": count,
+	})
 }

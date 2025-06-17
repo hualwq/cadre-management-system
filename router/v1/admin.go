@@ -91,19 +91,15 @@ func ComfirmAssessment(c *gin.Context) {
 }
 
 func GetCadreInfo_mod(c *gin.Context) {
-	var (
-		appG = app.Gin{C: c}
-		form ComfirmcadreForm
-	)
+	appG := app.Gin{C: c}
+	userId := c.Query("user_id")
 
-	httpCode, errCode := app.BindAndValid(c, &form)
-
-	if errCode != e.SUCCESS {
-		appG.Response(httpCode, errCode, nil)
+	if userId == "" {
+		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
 		return
 	}
 
-	Cadreservice := cadre_service.CadreInfo_mod{ID: form.CadreID}
+	Cadreservice := cadre_service.CadreInfo_mod{ID: userId}
 	cadre, err := Cadreservice.GetCadreInfo()
 	if err != nil {
 		// 根据错误类型返回不同状态码
@@ -323,20 +319,16 @@ func GetpoexpmodByID(c *gin.Context) {
 }
 
 func GetPoexpModByCadreID(c *gin.Context) {
-	var (
-		appG = app.Gin{C: c}
-		form ComfirmPositionhistoryForm
-	)
+	appG := app.Gin{C: c}
+	userID := c.Query("user_id")
 
-	// 参数校验
-	httpCode, errCode := app.BindAndValid(c, &form)
-	if errCode != e.SUCCESS {
-		appG.Response(httpCode, errCode, nil)
+	if userID == "" {
+		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
 		return
 	}
 
 	poexpModService := admin_service.GetPoexpModByCadreID{
-		CadreID: form.CadreID,
+		CadreID: userID,
 	}
 	exists, err := poexpModService.ExistByCadreID()
 	if err != nil {

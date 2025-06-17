@@ -22,6 +22,7 @@ type PositionHistory_mod struct {
 	Month        uint   `gorm:"column:applied_at_month;type:tinyint unsigned" json:"applied_at_month"`
 	Day          uint   `gorm:"column:applied_at_day;type:tinyint unsigned" json:"applied_at_day"`
 	Audited      bool   `gorm:"default:false;column:is_audited"`
+	PosID        int    `gorm:"not null;column:pos_id" json:"pos_id"`
 }
 
 type Posexp_mod struct {
@@ -266,4 +267,33 @@ func DeletePosexpModByID(id int) error {
 		return errors.New("未找到匹配的岗位经历记录")
 	}
 	return nil
+}
+
+func GetPositionHistoryModsByUserID(userID string, pageNum int, pageSize int) ([]PositionHistory_mod, error) {
+	var positionHistoryMods []PositionHistory_mod
+	offset := (pageNum - 1) * pageSize
+	err := db.Where("user_id = ?", userID).Offset(offset).Limit(pageSize).Find(&positionHistoryMods).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, err
+	}
+	return positionHistoryMods, nil
+}
+
+func GetPosExpTotalByPosID(posID int) (int64, error) {
+	var count int64
+	err := db.Model(&Posexp_mod{}).Where("pos_id = ?", posID).Count(&count).Error
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+func GetPosExpByPosID(posID int, pageNum, pageSize int) ([]Posexp_mod, error) {
+	var posExps []Posexp_mod
+	offset := (pageNum - 1) * pageSize
+	err := db.Where("pos_id= ?", posID).Offset(offset).Limit(pageSize).Find(&posExps).Error
+	if err != nil && err != gorm.ErrRecordNotFound {
+		return nil, err
+	}
+	return posExps, nil
 }

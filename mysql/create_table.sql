@@ -303,3 +303,19 @@
 
 -- ALTER TABLE cadm_position_histories
 -- ADD COLUMN applied_at_day INT UNSIGNED;
+
+ALTER TABLE cadm_posexp_mod
+ADD COLUMN pos_id INT,
+ADD CONSTRAINT fk_cadm_posexp_mod_pos_id
+FOREIGN KEY (pos_id) 
+REFERENCES cadm_position_histories_mod(id);
+
+-- 修改 cadm_posexp 表
+ALTER TABLE cadm_posexp
+ADD COLUMN pos_id INT,
+ADD CONSTRAINT fk_cadm_posexp_pos_id
+FOREIGN KEY (pos_id) 
+REFERENCES cadm_position_histories(id);  
+
+-- ALTER TABLE cadm_cadreinfo_mod ADD COLUMN photourl VARCHAR(100);  
+-- ALTER TABLE cadm_cadreinfo ADD COLUMN photourl VARCHAR(100);     

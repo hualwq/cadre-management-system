@@ -130,3 +130,55 @@ func Register(c *gin.Context) {
 		},
 	})
 }
+
+func GetUserID(c *gin.Context) {
+	appG := app.Gin{C: c}
+
+	// 从上下文获取 claims
+	claims, exists := c.Get("claims")
+	if !exists {
+		appG.Response(http.StatusUnauthorized, e.ERROR_USER_CHECK_TOKEN_FAIL, nil)
+		return
+	}
+
+	// 断言 claims 类型
+	jwtClaims, ok := claims.(*utils.Claims)
+	if !ok {
+		appG.Response(http.StatusUnauthorized, e.ERROR_USER_CHECK_TOKEN_FAIL, nil)
+		return
+	}
+
+	// 获取 user_id
+	userID := jwtClaims.UserID
+
+	// 返回响应
+	appG.Response(http.StatusOK, e.SUCCESS, gin.H{
+		"user_id": userID,
+	})
+}
+
+func GetUserRole(c *gin.Context) {
+	appG := app.Gin{C: c}
+
+	// 从上下文获取 claims
+	claims, exists := c.Get("claims")
+	if !exists {
+		appG.Response(http.StatusUnauthorized, e.ERROR_USER_CHECK_TOKEN_FAIL, nil)
+		return
+	}
+
+	// 断言 claims 类型
+	jwtClaims, ok := claims.(*utils.Claims)
+	if !ok {
+		appG.Response(http.StatusUnauthorized, e.ERROR_USER_CHECK_TOKEN_FAIL, nil)
+		return
+	}
+
+	// 获取 role
+	role := jwtClaims.Role
+
+	// 返回响应
+	appG.Response(http.StatusOK, e.SUCCESS, gin.H{
+		"role": role,
+	})
+}

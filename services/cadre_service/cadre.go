@@ -16,6 +16,7 @@ type PositionHistory_mod struct {
 }
 
 type GetPositionHistory_mod struct {
+	UserID       string
 	Name         string
 	Department   string
 	Category     string
@@ -48,6 +49,7 @@ type Posexp struct {
 	Posyear    string `json:"year"`
 	Department string `json:"department"`
 	Pos        string `json:"position"`
+	PosID      int
 
 	PageNum  int
 	PageSize int
@@ -114,6 +116,18 @@ type Posexp_mod struct {
 	Posyear    string `json:"year"`
 	Department string `json:"department"`
 	Pos        string `json:"position"`
+	PosID      int
+
+	PageNum  int
+	PageSize int
+}
+
+func (s *Posexp_mod) GetAll() ([]models.Posexp_mod, error) {
+	return models.GetPosExpByPosID(s.PosID, s.PageNum, s.PageSize)
+}
+
+func (s *Posexp_mod) Count() (int64, error) {
+	return models.GetPosExpTotalByPosID(s.PosID)
 }
 
 func (c *CadreInfo_mod) DeleteByID() error {

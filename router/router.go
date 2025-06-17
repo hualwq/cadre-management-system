@@ -5,6 +5,7 @@ import (
 	"cadre-management/pkg/upload"
 	v1 "cadre-management/router/v1"
 	"net/http"
+	"time"
 
 	"github.com/gin-contrib/cors"
 
@@ -13,16 +14,29 @@ import (
 
 func InitRouter() *gin.Engine {
 	r := gin.New()
-	r.Use(cors.Default())
+
+	corsConfig := cors.Config{
+		AllowOrigins:     []string{"http://localhost:8080"}, // 你前端的地址
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true, // 如果你设置了 cookie 或需要身份凭证
+		MaxAge:           12 * time.Hour,
+	}
+
+	r.Use(cors.New(corsConfig))
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
 
 	r.StaticFS("/upload/images", http.Dir(upload.GetImageFullPath()))
 	r.POST("/login", v1.Login)
 	r.POST("/register", v1.Register)
+	r.GET("/getuserrole", v1.GetUserRole)
 	apiv1 := r.Group("/cadre")
 	apiv1.Use(middleware.JWT()) //普通干部
 	{
+
+		apiv1.GET("/getuserid", v1.GetUserID)
 		apiv1.POST("/cadreinfo", middleware.RoleMiddleware("cadre"), v1.AddCadreInfo_mod)
 		apiv1.POST("/assessment", middleware.RoleMiddleware("cadre"), v1.AddAssessment_mod)
 		apiv1.POST("/positionhistory", middleware.RoleMiddleware("cadre"), v1.AddPositionHistory_mod)
@@ -30,6 +44,10 @@ func InitRouter() *gin.Engine {
 		apiv1.POST("/resume", middleware.RoleMiddleware("cadre"), v1.AddResume_mod)
 		apiv1.POST("/familymember", middleware.RoleMiddleware("cadre"), v1.Addfamilymember_mod)
 		apiv1.POST("/image", middleware.RoleMiddleware("cadre"), v1.UploadImage)
+
+		apiv1.GET("/getphmodbypage", middleware.RoleMiddleware("cadre"), v1.GetPositionHistoryModsByPage)
+		apiv1.GET("/getasmodbypage", middleware.RoleMiddleware("cadre"), v1.GetAssessmentModsByPage)
+		apiv1.GET("/getposexpbyposid", middleware.RoleMiddleware("cadre"), v1.GetPosExpByPosID)
 
 		apiv1.PUT("/cadreinfo", middleware.RoleMiddleware("cadre"), v1.EditInfo_mod)
 		apiv1.PUT("/resume", middleware.RoleMiddleware("cadre"), v1.EditResume_Mod)

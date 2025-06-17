@@ -5,10 +5,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"cadre-management/models"
 	"cadre-management/pkg/app"
 	"cadre-management/pkg/e"
 	"cadre-management/pkg/logging"
 	"cadre-management/pkg/upload"
+	"cadre-management/pkg/utils"
 )
 
 // @Summary Import Image
@@ -49,6 +51,27 @@ func UploadImage(c *gin.Context) {
 	}
 
 	if err := c.SaveUploadedFile(image, src); err != nil {
+		logging.Warn(err)
+		appG.Response(http.StatusInternalServerError, e.ERROR_UPLOAD_SAVE_IMAGE_FAIL, nil)
+		return
+	}
+
+	claims, exists := c.Get("claims")
+	if !exists {
+		appG.Response(http.StatusUnauthorized, e.ERROR_USER_CHECK_TOKEN_FAIL, nil)
+		return
+	}
+
+	jwtClaims, ok := claims.(*utils.Claims)
+	if !ok {
+		appG.Response(http.StatusUnauthorized, e.ERROR_USER_CHECK_TOKEN_FAIL, nil)
+		return
+	}
+	userID := jwtClaims.UserID
+
+	// 更新数据库记录
+	err = models.UpdateCadreInfoModPhotoURL(userID, imageName)
+	if err != nil {
 		logging.Warn(err)
 		appG.Response(http.StatusInternalServerError, e.ERROR_UPLOAD_SAVE_IMAGE_FAIL, nil)
 		return

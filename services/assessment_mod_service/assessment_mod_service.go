@@ -17,6 +17,7 @@ type Assessment_mod struct {
 	WorkSummary string
 	Grade       string
 	Audited     *bool
+	UserID      string
 
 	PageNum  int
 	PageSize int

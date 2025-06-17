@@ -53,5 +53,7 @@
 -- ALTER TABLE cadm_cadreinfo_mod DROP PRIMARY KEY;
 -- ALTER TABLE cadm_cadreinfo DROP PRIMARY KEY;
 
-ALTER TABLE cadm_cadreinfo_mod ADD COLUMN photourl VARCHAR(100);  -- 或其他适当的数据类型
-ALTER TABLE cadm_cadreinfo ADD COLUMN photourl VARCHAR(100);      -- 或其他适当的数据类型
+-- ALTER TABLE cadm_cadreinfo_mod ADD COLUMN photourl VARCHAR(100);  
+-- ALTER TABLE cadm_cadreinfo ADD COLUMN photourl VARCHAR(100);      
+
+-- 修改 cadm_posexp_mod 表

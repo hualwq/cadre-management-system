@@ -3,7 +3,7 @@ package v1
 import (
 	"cadre-management/pkg/app"
 	"cadre-management/pkg/e"
-	"cadre-management/services/sys_admin"
+	"cadre-management/services/Sys_admin"
 	"net/http"
 
 	"github.com/unknwon/com"
@@ -28,7 +28,7 @@ func GetUserByPage(c *gin.Context) {
 	pageNum := com.StrTo(pageNumstr).MustInt()
 	pageSize := com.StrTo(pageSizestr).MustInt()
 
-	userService := sys_admin.GetUser{
+	userService := Sys_admin.GetUser{
 		PageNum:  pageNum,
 		PageSize: pageSize,
 	}
@@ -46,7 +46,7 @@ func GetAllUser(c *gin.Context) {
 	appG := app.Gin{C: c}
 
 	// 创建service实例
-	userService := sys_admin.User{}
+	userService := Sys_admin.User{}
 
 	// 调用service层方法
 	users, err := userService.GetAllUser()
@@ -72,7 +72,7 @@ func ChangeUserRole(c *gin.Context) {
 	}
 
 	// 调用服务层方法
-	userService := sys_admin.ChangeUserRole{
+	userService := Sys_admin.ChangeUserRole{
 		CadreID: form.CadreID,
 		Role:    form.Role,
 	}

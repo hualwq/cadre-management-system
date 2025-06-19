@@ -15,6 +15,8 @@ import (
 func InitRouter() *gin.Engine {
 	r := gin.New()
 
+	v1.InitDepartmentService()
+
 	corsConfig := cors.Config{
 		AllowOrigins:     []string{"http://localhost:8080"}, // 你前端的地址
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -37,30 +39,30 @@ func InitRouter() *gin.Engine {
 	{
 
 		apiv1.GET("/getuserid", v1.GetUserID)
-		apiv1.POST("/cadreinfo", middleware.RoleMiddleware("cadre"), v1.AddCadreInfo_mod)
-		apiv1.POST("/assessment", middleware.RoleMiddleware("cadre"), v1.AddAssessment_mod)
-		apiv1.POST("/positionhistory", middleware.RoleMiddleware("cadre"), v1.AddPositionHistory_mod)
-		apiv1.POST("/yearposition", middleware.RoleMiddleware("cadre"), v1.Addyearposition_mod)
-		apiv1.POST("/resume", middleware.RoleMiddleware("cadre"), v1.AddResume_mod)
-		apiv1.POST("/familymember", middleware.RoleMiddleware("cadre"), v1.Addfamilymember_mod)
+		apiv1.POST("/cadreinfo", middleware.RoleMiddleware("cadre"), v1.AddCadreInfo)
+		apiv1.POST("/assessment", middleware.RoleMiddleware("cadre"), v1.AddAssessment)
+		apiv1.POST("/positionhistory", middleware.RoleMiddleware("cadre"), v1.AddPositionHistory)
+		apiv1.POST("/yearposition", middleware.RoleMiddleware("cadre"), v1.Addyearposition)
+		apiv1.POST("/resume", middleware.RoleMiddleware("cadre"), v1.AddResume)
+		apiv1.POST("/familymember", middleware.RoleMiddleware("cadre"), v1.Addfamilymember)
 		apiv1.POST("/image", middleware.RoleMiddleware("cadre"), v1.UploadImage)
 
 		apiv1.GET("/getphmodbypage", middleware.RoleMiddleware("cadre"), v1.GetPositionHistoryModsByPage)
-		apiv1.GET("/getasmodbypage", middleware.RoleMiddleware("cadre"), v1.GetAssessmentModsByPage)
+		apiv1.GET("/getasmodbypage", middleware.RoleMiddleware("cadre"), v1.GetAssessmentByPage)
 		apiv1.GET("/getposexpbyposid", middleware.RoleMiddleware("cadre"), v1.GetPosExpByPosID)
 
-		apiv1.PUT("/cadreinfo", middleware.RoleMiddleware("cadre"), v1.EditInfo_mod)
-		apiv1.PUT("/resume", middleware.RoleMiddleware("cadre"), v1.EditResume_Mod)
-		apiv1.PUT("/positionhistory", middleware.RoleMiddleware("cadre"), v1.EditPh_Mod)
-		apiv1.PUT("/familymember", middleware.RoleMiddleware("cadre"), v1.Editfamilymember_mod)
-		apiv1.PUT("/assessment", middleware.RoleMiddleware("cadre"), v1.EditassessmentMod)
+		apiv1.PUT("/cadreinfo", middleware.RoleMiddleware("cadre"), v1.EditInfo)
+		apiv1.PUT("/resume", middleware.RoleMiddleware("cadre"), v1.EditResume)
+		apiv1.PUT("/positionhistory", middleware.RoleMiddleware("cadre"), v1.EditPh)
+		apiv1.PUT("/familymember", middleware.RoleMiddleware("cadre"), v1.Editfamilymember)
+		apiv1.PUT("/assessment", middleware.RoleMiddleware("cadre"), v1.EditAssessment)
 
 		apiv1.DELETE("/familymember", middleware.RoleMiddleware("cadre"), v1.DeleteFamilyMemberModification)
 		apiv1.DELETE("/resume", middleware.RoleMiddleware("cadre"), v1.DeleteFamilyMemberModification)
 		apiv1.DELETE("/positionhistory", middleware.RoleMiddleware("cadre"), v1.Deletephmod)
 		apiv1.DELETE("/cadre", middleware.RoleMiddleware("cadre"), v1.Deletecadremod)
 		apiv1.DELETE("/posexp", middleware.RoleMiddleware("cadre"), v1.DeletePosexpmodbyID)
-		apiv1.DELETE("/assessment", middleware.RoleMiddleware("cadre"), v1.DeleteAssessmentmodbyID)
+		apiv1.DELETE("/assessment", middleware.RoleMiddleware("cadre"), v1.DeleteAssessment)
 
 		apiv1.GET("/getmessage", middleware.RoleMiddleware("cadre"), v1.GetCadreMessages)
 	}
@@ -72,7 +74,7 @@ func InitRouter() *gin.Engine {
 		apiv2.GET("/phbypage", middleware.RoleMiddleware("admin", "sysadmin", "cadre"), v1.GetPositionHistories)
 		apiv2.GET("/cadrebypage", middleware.RoleMiddleware("admin", "sysadmin", "cadre"), v1.GetCadreInfoModByPage)
 
-		apiv2.GET("/assmodbyid", middleware.RoleMiddleware("admin", "sysadmin", "cadre"), v1.GetAssessmentsModByID)
+		apiv2.GET("/assmodbyid", middleware.RoleMiddleware("admin", "sysadmin", "cadre"), v1.GetAssessmentByID)
 		apiv2.GET("/phmodbyid", middleware.RoleMiddleware("admin", "sysadmin", "cadre"), v1.GetPositionHistoryMod)
 		apiv2.GET("/fmmodbyid", middleware.RoleMiddleware("admin", "sysadmin", "cadre"), v1.GetFamilyMemberModification)
 		apiv2.GET("/resumebyid", middleware.RoleMiddleware("admin", "sysadmin", "cadre"), v1.GetResumeEntryModificationByID)
@@ -81,10 +83,10 @@ func InitRouter() *gin.Engine {
 		apiv2.GET("/cadreinfo", middleware.RoleMiddleware("admin", "sysadmin", "cadre"), v1.GetCadreInfo_mod)
 		apiv2.GET("/fammonbycadreid", middleware.RoleMiddleware("admin", "sysadmin", "cadre"), v1.GetFamilyMemberModificationsByCadreID)
 		apiv2.GET("/resmonbycadreid", middleware.RoleMiddleware("admin", "sysadmin", "cadre"), v1.GetResumeEntryModificationsByCadreID)
-		apiv2.GET("/poexpbycadreid", middleware.RoleMiddleware("admin", "sysadmin", "cadre"), v1.GetPoexpModByCadreID)
+		apiv2.GET("/poexpbycadreid", middleware.RoleMiddleware("admin", "sysadmin", "cadre"), v1.GetPoexpModByPosID)
 
 		apiv2.POST("/cadreinfo", middleware.RoleMiddleware("admin", "sysadmin"), v1.ComfirmCadreInfo)
-		apiv2.POST("/assessment", middleware.RoleMiddleware("admin", "sysadmin"), v1.ComfirmAssessment)
+		apiv2.POST("/assessment", middleware.RoleMiddleware("admin", "sysadmin"), v1.ConfirmAssessment)
 		apiv2.POST("/positionhistory", middleware.RoleMiddleware("admin", "sysadmin"), v1.ConfirmPositionhistory)
 		apiv2.POST("/poexp", middleware.RoleMiddleware("admin", "sysadmin"), v1.Comfirmpoexp)
 		apiv2.POST("/resume", middleware.RoleMiddleware("admin", "sysadmin"), v1.ComfirmResume)
@@ -105,6 +107,15 @@ func InitRouter() *gin.Engine {
 		apiv3.GET("/alluser", middleware.RoleMiddleware("sysadmin"), v1.GetAllUser)
 
 		apiv3.POST("/changerole", middleware.RoleMiddleware("sysadmin"), v1.ChangeUserRole)
+
+		// department management (school_admin)
+		apiv3.POST("/department", middleware.RoleMiddleware("school_admin"), v1.CreateDepartment)
+		apiv3.DELETE("/department/:id", middleware.RoleMiddleware("school_admin"), v1.DeleteDepartment)
+		apiv3.PUT("/department/:id", middleware.RoleMiddleware("school_admin"), v1.UpdateDepartment)
+		apiv3.GET("/departments", middleware.RoleMiddleware("school_admin"), v1.ListDepartments)
+		apiv3.POST("/department/admin", middleware.RoleMiddleware("school_admin"), v1.SetDepartmentAdmin)
+		apiv3.POST("/department/admin/unset", middleware.RoleMiddleware("school_admin"), v1.UnsetDepartmentAdmin)
+		apiv3.GET("/department/admins", middleware.RoleMiddleware("school_admin"), v1.GetDepartmentAdmins)
 	}
 
 	return r

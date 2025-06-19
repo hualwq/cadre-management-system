@@ -1,10 +1,10 @@
-package assessment_mod_service
+package Assessment_service
 
 import (
 	"cadre-management/models"
 )
 
-type Assessment_mod struct {
+type Assessment struct {
 	ID          int
 	Name        string
 	CadreID     string
@@ -16,22 +16,18 @@ type Assessment_mod struct {
 	Year        int
 	WorkSummary string
 	Grade       string
-	Audited     *bool
+	Audited     int
 	UserID      string
 
 	PageNum  int
 	PageSize int
 }
 
-type GetAssessment_modID struct {
-	ID int
-}
-
-func (a *GetAssessment_modID) ExistByID() (bool, error) {
+func (a *Assessment) ExistByID() (bool, error) {
 	return models.ExistAssessmentModByID(a.ID)
 }
 
-func (a *GetAssessment_modID) Get() (*models.Assessment_mod, error) {
+func (a *Assessment) Get() (*models.Assessment, error) {
 	return models.GetAssesement(a.ID)
 }
 
@@ -48,7 +44,7 @@ func (c ComfirmAssessment) ComfirmAssessment() error {
 	return nil
 }
 
-func (a *Assessment_mod) AddAssessment_mod() error {
+func (a *Assessment) AddAssessment() error {
 	assessment := map[string]interface{}{
 		"user_id":      a.CadreID,
 		"department":   a.Department,
@@ -58,22 +54,22 @@ func (a *Assessment_mod) AddAssessment_mod() error {
 		"year":         a.Year,
 	}
 
-	if err := models.AddAssessment_mod(assessment); err != nil {
+	if err := models.AddAssessment(assessment); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (a *Assessment_mod) Count() (int64, error) {
+func (a *Assessment) Count() (int64, error) {
 	return models.GetAssessmentModTotal(a.getMaps())
 }
 
-func (a *Assessment_mod) GetAll() ([]models.Assessment_mod, error) {
+func (a *Assessment) GetAll() ([]models.Assessment, error) {
 	return models.GetAssessmentsMod(a.PageNum, a.PageSize, a.getMaps())
 }
 
-func (a *Assessment_mod) getMaps() map[string]interface{} {
+func (a *Assessment) getMaps() map[string]interface{} {
 	maps := make(map[string]interface{})
 
 	if a.UserID != "" {
@@ -104,34 +100,18 @@ func (a *Assessment_mod) getMaps() map[string]interface{} {
 	if a.Year != 0 {
 		maps["year"] = a.Year
 	}
-	if a.Audited != nil {
-		maps["is_audited"] = *a.Audited
+	if a.Audited != 0 {
+		maps["is_audited"] = a.Audited
 	}
 
 	return maps
 }
 
-type DeleteAssessmentModByID struct {
-	ID int
-}
-
-func (d *DeleteAssessmentModByID) Delete() error {
+func (d *Assessment) Delete() error {
 	return models.DeleteAssessmentByID(d.ID)
 }
 
-type DeleteAssessmentByID struct {
-	ID int
-}
-
-func (d *DeleteAssessmentByID) Delete() error {
-	return models.DeleteAssessmentByID(d.ID)
-}
-
-func (a *Assessment_mod) ExistByID() (bool, error) {
-	return models.ExistAssessmentModByID(a.ID)
-}
-
-func (a *Assessment_mod) EditAssessmentMod() error {
+func (a *Assessment) EditAssessmentMod() error {
 	data := map[string]interface{}{
 		"name":         a.Name,
 		"user_id":      a.CadreID,

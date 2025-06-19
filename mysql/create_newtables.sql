@@ -77,6 +77,7 @@ CREATE TABLE cadm_cadreinfo (
   administrative_appointment text DEFAULT NULL COMMENT '行政职务任命',
   photourl VARCHAR(100) DEFAULT NULL COMMENT '照片URL',
   department_id INT DEFAULT NULL COMMENT '所属学院ID',
+  is_audited INT DEFAULT 0 COMMENT '审核状态（0未审核/1待审核/2已审核）',
   PRIMARY KEY (user_id),
   FOREIGN KEY (department_id) REFERENCES cadm_departments(id)
     ON DELETE SET NULL ON UPDATE CASCADE
@@ -100,6 +101,7 @@ CREATE TABLE cadm_assessments (
   year int NOT NULL COMMENT '考核年度',
   work_summary text NOT NULL COMMENT '工作说明(1000字以内)',
   grade varchar(10) NOT NULL COMMENT '考核等级(优秀/合格/不合格)',
+  is_audited INT DEFAULT 0 COMMENT '审核状态（0未审核/1待审核/2已审核）',
   PRIMARY KEY (id),
   INDEX idx_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='考核表';
@@ -115,6 +117,7 @@ CREATE TABLE cadm_resume_entries (
   organization varchar(255) NOT NULL COMMENT '工作单位/学校',
   department varchar(100) DEFAULT NULL COMMENT '学院/部门',
   position varchar(100) DEFAULT NULL COMMENT '职务/身份',
+  is_audited INT DEFAULT 0 COMMENT '审核状态（0未审核/1待审核/2已审核）',
   PRIMARY KEY (id),
   INDEX idx_user_id (user_id),
   INDEX idx_organization (organization),
@@ -135,6 +138,7 @@ CREATE TABLE cadm_family_members (
   birth_date VARCHAR(50),
   political_status VARCHAR(50),
   work_unit VARCHAR(200),
+  is_audited INT DEFAULT 0 COMMENT '审核状态（0未审核/1待审核/2已审核）',
   FOREIGN KEY (user_id) REFERENCES cadm_cadreinfo(user_id),
   INDEX idx_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='家庭成员表';
@@ -155,7 +159,8 @@ CREATE TABLE cadm_position_histories (
   positions VARCHAR(200),
   applied_at_year INT UNSIGNED,
   applied_at_month INT UNSIGNED,
-  applied_at_day INT UNSIGNED,
+  applied_at_day INT UNSIGNED,  
+  is_audited INT DEFAULT 0 COMMENT '审核状态（0未审核/1待审核/2已审核）',
   FOREIGN KEY (user_id) REFERENCES cadm_cadreinfo(user_id),
   INDEX idx_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='岗位历史表';
@@ -170,6 +175,7 @@ CREATE TABLE cadm_posexp (
   department varchar(100) NOT NULL,
   pos varchar(50) NOT NULL,
   pos_id INT,
+  is_audited INT DEFAULT 0 COMMENT '审核状态（0未审核/1待审核/2已审核）',
   PRIMARY KEY (id),
   FOREIGN KEY (user_id) REFERENCES cadm_cadreinfo(user_id),
   FOREIGN KEY (pos_id) REFERENCES cadm_position_histories(id)

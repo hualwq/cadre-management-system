@@ -1,4 +1,4 @@
-package familymember_service
+package Familymember_service
 
 import (
 	"cadre-management/models"
@@ -12,19 +12,10 @@ type FamilyMember struct {
 	BirthDate       string `json:"birth_date,omitempty"`
 	PoliticalStatus string `json:"political_status,omitempty"`
 	WorkUnit        string `json:"work_unit,omitempty"`
+	IsAudited       int    `json:"is_audited"`
 }
 
-type FamilyMember_mod struct {
-	ID              int    `json:"id"`
-	CadreID         string `json:"user_id"`
-	Relation        string `json:"relation"`
-	Name            string `json:"name"`
-	BirthDate       string `json:"birth_date,omitempty"`
-	PoliticalStatus string `json:"political_status,omitempty"`
-	WorkUnit        string `json:"work_unit,omitempty"`
-}
-
-func (fm *FamilyMember_mod) Add_familymember_mod() error {
+func (fm *FamilyMember) AddFamilyMember() error {
 	Cinfo := map[string]interface{}{
 		"user_id":          fm.CadreID,
 		"relation":         fm.Relation,
@@ -34,17 +25,17 @@ func (fm *FamilyMember_mod) Add_familymember_mod() error {
 		"work_unit":        fm.WorkUnit,
 	}
 
-	if err := models.Add_familymember_mod(Cinfo); err != nil {
+	if err := models.Addfamilymember(Cinfo); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (f *FamilyMember_mod) ExistByID() (bool, error) {
+func (f *FamilyMember) ExistByID() (bool, error) {
 	return models.ExistByID(f.ID)
 }
 
-func (fm *FamilyMember_mod) EditFamilyMemberMod() error {
+func (fm *FamilyMember) EditFamilyMemberMod() error {
 	data := map[string]interface{}{
 		"user_id":          fm.CadreID,
 		"relation":         fm.Relation,
@@ -53,48 +44,23 @@ func (fm *FamilyMember_mod) EditFamilyMemberMod() error {
 		"political_status": fm.PoliticalStatus,
 		"work_unit":        fm.WorkUnit,
 	}
-	return models.EditFamilyMemberModification(fm.ID, data)
+	return models.EditFamilyMember(fm.ID, data)
 }
 
-type FamilyMemberModifications struct {
-	ID int
+func (fmm *FamilyMember) Get() (*models.Familymember, error) {
+	return models.GetFamilyMemberByID(fmm.ID)
 }
 
-func (fmm *FamilyMemberModifications) ExistByID() (bool, error) {
-	return models.ExistFamilyMemberModificationByID(fmm.ID)
-}
-
-func (fmm *FamilyMemberModifications) Get() (*models.FamilyMember_modifications, error) {
-	return models.GetFamilyMemberModificationByID(fmm.ID)
-}
-
-func (fmm *FamilyMemberModifications) Delete() error {
-	return models.DeleteFamilyMemberModificationByID(fmm.ID)
-}
-
-type FamilyMemberModifications_cadreinfo struct {
-	CadreID string
+func (fmm *FamilyMember) Delete() error {
+	return models.DeleteFamilyMemberByID(fmm.ID)
 }
 
 // GetByCadreID 根据 CadreID 获取家庭成员修改记录
-func (fmm *FamilyMemberModifications_cadreinfo) GetByCadreID() ([]models.FamilyMember_modifications, error) {
-	return models.GetFamilyMemberModificationsByCadreID(fmm.CadreID)
+func (fmm *FamilyMember) GetByCadreID() ([]models.Familymember, error) {
+	return models.GetFamilyMembersByCadreID(fmm.CadreID)
 }
 
-type FamilyMemberDelete struct {
-	ID int
-}
-
-func (fmd *FamilyMemberDelete) Delete() error {
-	return models.DeleteFamilyMemberByID(fmd.ID)
-}
-
-type Comfirmfamilymember struct {
-	ID int
-	// 可以添加其他必要的字段
-}
-
-func (c Comfirmfamilymember) Comfirmfamilymember() error {
+func (c *FamilyMember) Comfirmfamilymember() error {
 	if err := models.Comfirmfamilymember(c.ID); err != nil {
 		return err
 	}

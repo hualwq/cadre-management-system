@@ -17,13 +17,13 @@ func JWT() gin.HandlerFunc {
         var code = e.SUCCESS
         var data interface{}
 
-        // 1. 从 Header 或 Query 获取 Token
+        // 1. 从 Header 获取 Access Token
         token := ""
         authHeader := c.GetHeader("Authorization")
         if authHeader != "" {
             token = strings.TrimPrefix(authHeader, "Bearer ")
         } else {
-            token = c.Query("token") 
+            token = c.Query("token")
         }
 
         if token == "" {
@@ -37,12 +37,19 @@ func JWT() gin.HandlerFunc {
             return
         }
 
-        // 2. 解析 Token
+        // 2. 解析 Access Token
         claims, err := utils.ParseToken(token)
         if err != nil {
             if ve, ok := err.(*jwt.ValidationError); ok {
                 if ve.Errors&jwt.ValidationErrorExpired != 0 {
                     code = e.ERROR_USER_CHECK_TOKEN_TIMEOUT
+                    c.JSON(http.StatusUnauthorized, gin.H{
+                        "code": code,
+                        "msg":  "AccessToken已过期，请用RefreshToken刷新",
+                        "data": data,
+                    })
+                    c.Abort()
+                    return
                 } else {
                     code = e.ERROR_USER_CHECK_TOKEN_FAIL
                 }

@@ -14,14 +14,14 @@ type Familymember struct {
 	BirthDate       string `gorm:"type:date" json:"birth_date,omitempty"`
 	PoliticalStatus string `gorm:"type:varchar(50)" json:"political_status,omitempty"`
 	WorkUnit        string `gorm:"type:varchar(200)" json:"work_unit,omitempty"`
-	Audited         int    `gorm:"default:0;column:audit_status"`
+	IsAudited       int    `gorm:"default:0;column:is_audited" json:"is_audited"`
 }
 
 func (Familymember) TableName() string {
 	return "cadm_family_members"
 }
 
-func Add_familymember_mod(data map[string]interface{}) error {
+func Addfamilymember(data map[string]interface{}) error {
 	// 检查必填字段是否存在
 	requiredFields := []string{"user_id", "relation", "name"}
 	for _, field := range requiredFields {
@@ -71,7 +71,7 @@ func ExistByID(id int) (bool, error) {
 	return count > 0, nil
 }
 
-func EditFamilyMemberModification(id int, data map[string]interface{}) error {
+func EditFamilyMember(id int, data map[string]interface{}) error {
 	var familyMember Familymember
 	result := db.Model(&familyMember).Where("id = ?", id).Updates(data)
 	if result.Error != nil {
@@ -84,7 +84,7 @@ func EditFamilyMemberModification(id int, data map[string]interface{}) error {
 }
 
 // ExistFamilyMemberModificationByID checks if a family member modification exists based on ID
-func ExistFamilyMemberModificationByID(id int) (bool, error) {
+func ExistFamilyMemberByID(id int) (bool, error) {
 	var member Familymember
 	err := db.Select("id").Where("id = ?  and is_audited = ?", id, 0).First(&member).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
@@ -99,7 +99,7 @@ func ExistFamilyMemberModificationByID(id int) (bool, error) {
 }
 
 // GetFamilyMemberModificationByID Get a single family member modification based on ID
-func GetFamilyMemberModificationByID(id int) (*Familymember, error) {
+func GetFamilyMemberByID(id int) (*Familymember, error) {
 	var member Familymember
 	err := db.Where("id = ?", id).First(&member).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
@@ -110,7 +110,7 @@ func GetFamilyMemberModificationByID(id int) (*Familymember, error) {
 }
 
 // DeleteFamilyMemberModificationByID delete a single family member modification
-func DeleteFamilyMemberModificationByID(id int) error {
+func DeleteFamilyMemberByID(id int) error {
 	if err := db.Where("id = ?", id).Delete(Familymember{}).Error; err != nil {
 		return err
 	}
@@ -119,11 +119,30 @@ func DeleteFamilyMemberModificationByID(id int) error {
 }
 
 // GetFamilyMemberModificationsByCadreID 根据 CadreID 获取家庭成员修改记录
-func GetFamilyMemberModificationsByCadreID(cadreID string) ([]Familymember, error) {
+func GetFamilyMembersByCadreID(cadreID string) ([]Familymember, error) {
 	var members []Familymember
 	err := db.Where("user_id = ?", cadreID).Find(&members).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
 	}
 	return members, nil
+}
+
+func Comfirmfamilymember(id int) error {
+	result := db.Model(&Familymember{}).
+		Where("id = ? and is_aidited = 0", id).
+		Updates(map[string]interface{}{
+			"is_audited": 1, // Using column name from struct tag
+		})
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	// Check if any record was actually updated
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
 }

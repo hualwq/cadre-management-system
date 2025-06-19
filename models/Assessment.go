@@ -22,7 +22,7 @@ type Assessment struct {
 	Year        int    `gorm:"type:int;not null;" json:"year"`
 	WorkSummary string `gorm:"type:text;not null;" json:"work_summary"`
 	Grade       string `gorm:"type:varchar(10);not null;" json:"grade"`
-	Audited     int    `gorm:"default:0;column:audit_status"`
+	IsAudited   int    `gorm:"default:0;column:is_audited" json:"is_audited"`
 }
 
 func (Assessment) TableName() string {
@@ -160,15 +160,40 @@ func DeleteAssessmentModByID(id int) error {
 	return nil
 }
 
-func ExistAssessmentModByID(id int) (bool, error) {
-	var count int64
-	err := db.Model(&Assessment{}).Where("id = ? and is_audited = false", id).Count(&count).Error
-	if err != nil {
-		return false, err
-	}
-	return count > 0, nil
-}
-
 func EditAssessmentModByID(id int, data map[string]interface{}) error {
 	return db.Model(&Assessment{}).Where("id = ?", id).Updates(data).Error
+}
+
+func ComfirmAssessment(id int, grade string) error {
+	// Update the assessment's grade and set audited status to 1
+	result := db.Model(&Assessment{}).
+		Where("id = ? and is_audited = 0", id).
+		Updates(map[string]interface{}{
+			"grade":      grade,
+			"is_audited": 1, // Using column name from struct tag
+		})
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	// Check if any record was actually updated
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
+}
+
+func DeleteAssessmentByID(id int) error {
+	if err := db.Where("id = ?", id, 0).Delete(&Assessment{}).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func ExistAssessmentModByID(id int) (bool, error) {
+	var count int64
+	err := db.Model(&Cadre{}).Where("id = ?", id, 0).Count(&count).Error
+	return count > 0, err
 }

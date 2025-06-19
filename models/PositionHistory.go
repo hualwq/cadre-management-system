@@ -7,7 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type PositionHistory_mod struct {
+type Positionhistory struct {
 	ID           int    `gorm:"primaryKey;autoIncrement" json:"id"`
 	CadreID      string `gorm:"not null;column:user_id" json:"user_id"`                   // Associates with the cadre's basic info
 	Name         string `gorm:"size:100;not null" json:"name"`                            // 姓名
@@ -21,7 +21,7 @@ type PositionHistory_mod struct {
 	Year         uint   `gorm:"not null;column:applied_at_year;type:int unsigned" json:"applied_at_year"`
 	Month        uint   `gorm:"column:applied_at_month;type:tinyint unsigned" json:"applied_at_month"`
 	Day          uint   `gorm:"column:applied_at_day;type:tinyint unsigned" json:"applied_at_day"`
-	Audited      int    `gorm:"default:0;column:audit_status"`
+	IsAudited    int    `gorm:"default:0;column:is_audited" json:"is_audited"`
 	PosID        int    `gorm:"not null;column:pos_id" json:"pos_id"`
 }
 
@@ -31,10 +31,10 @@ type Posexp struct {
 	Posyear    string `gorm:"size:20" json:"year"`
 	Department string `gorm:"size:100" json:"department"`
 	Pos        string `gorm:"size:50" json:"position"`
-	Audited    bool   `gorm:"default:false;column:is_audited"`
+	IsAudited  bool   `gorm:"default:false;column:is_audited"`
 }
 
-func (PositionHistory_mod) TableName() string {
+func (Positionhistory) TableName() string {
 	return "cadm_position_histories"
 }
 
@@ -42,7 +42,7 @@ func (Posexp) TableName() string {
 	return "cadm_Posexp"
 }
 
-func AddPositionHistory_mod(data map[string]interface{}) error {
+func AddPositionhistory(data map[string]interface{}) error {
 	// 从 data 中解析直接提供的字段
 	cadreID, ok := data["user_id"].(string)
 	if !ok {
@@ -55,8 +55,8 @@ func AddPositionHistory_mod(data map[string]interface{}) error {
 		return fmt.Errorf("请先编辑基本信息或等管理员审核信息")
 	}
 
-	// 创建 PositionHistory_mod 对象
-	positionHistory := PositionHistory_mod{
+	// 创建 Positionhistory 对象
+	positionHistory := Positionhistory{
 		CadreID:      cadreID,
 		Name:         cadre.Name,
 		PhoneNumber:  cadre.Phone,
@@ -71,7 +71,7 @@ func AddPositionHistory_mod(data map[string]interface{}) error {
 	}
 
 	// 检查是否存在相同 CadreID 和 AcademicYear 的记录
-	var existing PositionHistory_mod
+	var existing Positionhistory
 	err := db.Where("user_id = ? AND academic_year = ?", cadreID, positionHistory.AcademicYear).First(&existing).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return fmt.Errorf("failed to check existing position history: %v", err)
@@ -108,8 +108,8 @@ func Addyearpositon(data map[string]interface{}) error {
 	return nil
 }
 
-func GetPositionHistoryModByID(id int) (*PositionHistory_mod, error) {
-	var positionHistoryMod PositionHistory_mod
+func GetPositionHistoryModByID(id int) (*Positionhistory, error) {
+	var positionHistoryMod Positionhistory
 	if err := db.Where("id = ?", id).First(&positionHistoryMod).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -120,9 +120,9 @@ func GetPositionHistoryModByID(id int) (*PositionHistory_mod, error) {
 }
 
 // GetPositionHistories gets a list of position histories based on paging and constraints
-func GetPositionHistoriesMod(pageNum int, pageSize int, maps interface{}) ([]PositionHistory_mod, error) {
+func GetPositionHistories(pageNum int, pageSize int, maps interface{}) ([]Positionhistory, error) {
 	var (
-		positionHistories []PositionHistory_mod
+		positionHistories []Positionhistory
 		err               error
 	)
 
@@ -142,7 +142,7 @@ func GetPositionHistoriesMod(pageNum int, pageSize int, maps interface{}) ([]Pos
 // GetPositionHistoryTotal counts the total number of position histories based on the constraint
 func GetPositionHistoryModTotal(maps interface{}) (int64, error) {
 	var count int64
-	if err := db.Model(&PositionHistory_mod{}).Where(maps).Count(&count).Error; err != nil {
+	if err := db.Model(&Positionhistory{}).Where(maps).Count(&count).Error; err != nil {
 		return 0, err
 	}
 
@@ -150,8 +150,8 @@ func GetPositionHistoryModTotal(maps interface{}) (int64, error) {
 }
 
 // DeletePositionHistoryByID delete a single position history
-func DeletePositionHistoryModByID(id int) error {
-	if err := db.Where("id = ?", id).Delete(PositionHistory_mod{}).Error; err != nil {
+func DeletePositionHistoryByID(id int) error {
+	if err := db.Where("id = ?", id).Delete(Positionhistory{}).Error; err != nil {
 		return err
 	}
 
@@ -159,7 +159,7 @@ func DeletePositionHistoryModByID(id int) error {
 }
 
 func ExistPositionHistoryByID(id int) (bool, error) {
-	var positionHistory PositionHistory_mod
+	var positionHistory Positionhistory
 	err := db.Select("id").Where("id = ?  and is_audited = ?", id, 0).First(&positionHistory).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return false, err
@@ -172,9 +172,9 @@ func ExistPositionHistoryByID(id int) (bool, error) {
 	return false, nil
 }
 
-func ExistPosexpModByID(id int) (bool, error) {
+func ExistPosexpByID(id int) (bool, error) {
 	var posexpMod Posexp
-	err := db.Select("id").Where("id = ? and is_audited = ?", id, 0).First(&posexpMod).Error
+	err := db.Select("id").Where("id = ?", id).First(&posexpMod).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return false, err
 	}
@@ -184,7 +184,7 @@ func ExistPosexpModByID(id int) (bool, error) {
 	return false, nil
 }
 
-func GetPosexpModByID(id int) (*Posexp, error) {
+func GetPosexpByID(id int) (*Posexp, error) {
 	var posexpMod Posexp
 	err := db.Where("id = ?", id).First(&posexpMod).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
@@ -194,7 +194,7 @@ func GetPosexpModByID(id int) (*Posexp, error) {
 }
 
 func EditPositionHistoryMod(id int, data map[string]interface{}) error {
-	var positionHistoryMod PositionHistory_mod
+	var positionHistoryMod Positionhistory
 	if err := db.Model(&positionHistoryMod).Where("id = ?", id).Updates(data).Error; err != nil {
 		return err
 	}
@@ -204,7 +204,7 @@ func EditPositionHistoryMod(id int, data map[string]interface{}) error {
 
 func ExistPoexpModByCadreID(cadreID string) (bool, error) {
 	var poexpMod Posexp
-	err := db.Select("id").Where("user_id = ? and is_audited = ?", cadreID, 0).First(&poexpMod).Error
+	err := db.Select("id").Where("user_id = ?", cadreID).First(&poexpMod).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return false, err
 	}
@@ -217,7 +217,7 @@ func ExistPoexpModByCadreID(cadreID string) (bool, error) {
 // GetPoexpModByCadreID 根据 CadreID 获取 PoexpMod 记录
 func GetPoexpModByCadreID(cadreID string) ([]Posexp, error) {
 	var poexpMods []Posexp
-	err := db.Where("user_id = ? and is_audited = ?", cadreID, 0).Find(&poexpMods).Error
+	err := db.Where("user_id = ?", cadreID).Find(&poexpMods).Error
 	if err != nil {
 		return nil, err
 	}
@@ -227,7 +227,7 @@ func GetPoexpModByCadreID(cadreID string) ([]Posexp, error) {
 func Comfirmpoexp(cadreID string) error {
 	var mod Posexp
 	// 查询待审核的岗位经历修改记录
-	result := db.Where("user_id = ? AND is_audited = false", cadreID).First(&mod)
+	result := db.Where("user_id = ? AND is_audited = 0", cadreID).First(&mod)
 	if result.Error != nil {
 		if result.Error == gorm.ErrRecordNotFound {
 			return fmt.Errorf("未找到待审核的岗位经历信息: %s", cadreID)
@@ -247,7 +247,7 @@ func Comfirmpoexp(cadreID string) error {
 	}
 
 	// 更新修改记录的审核状态
-	mod.Audited = true
+	mod.IsAudited = true
 	if err := db.Save(&mod).Error; err != nil {
 		return fmt.Errorf("更新审核状态失败: %v", err)
 	}
@@ -255,7 +255,7 @@ func Comfirmpoexp(cadreID string) error {
 	return nil
 }
 
-func DeletePosexpModByID(id int) error {
+func DeletePosexpByID(id int) error {
 	if id <= 0 {
 		return errors.New("无效的岗位经历记录 ID")
 	}
@@ -269,8 +269,8 @@ func DeletePosexpModByID(id int) error {
 	return nil
 }
 
-func GetPositionHistoryModsByUserID(userID string, pageNum int, pageSize int) ([]PositionHistory_mod, error) {
-	var positionHistoryMods []PositionHistory_mod
+func GetPositionHistoryModsByUserID(userID string, pageNum int, pageSize int) ([]Positionhistory, error) {
+	var positionHistoryMods []Positionhistory
 	offset := (pageNum - 1) * pageSize
 	err := db.Where("user_id = ?", userID).Offset(offset).Limit(pageSize).Find(&positionHistoryMods).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
@@ -295,4 +295,23 @@ func GetPosExpByPosID(posID int) ([]Posexp, error) {
 		return nil, err
 	}
 	return posExps, nil
+}
+
+func ComfirmPositionhistory(id int) error {
+	result := db.Model(&Positionhistory{}).
+		Where("id = ? and is_audited = 0", id, 0).
+		Updates(map[string]interface{}{
+			"is_audited": 1, // Using column name from struct tag
+		})
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	// Check if any record was actually updated
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
 }

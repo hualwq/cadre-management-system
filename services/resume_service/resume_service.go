@@ -1,17 +1,8 @@
-package resume_service
+package Resume_service
 
 import "cadre-management/models"
 
 type ResumeEntry struct {
-	CadreID      string `json:"user_id"`
-	StartDate    string `json:"start_date"`           // 格式：2007.09 或 2019.12
-	EndDate      string `json:"end_date"`             // 格式：2011.07 或 "至今"
-	Organization string `json:"organization"`         // 工作单位或学校
-	Department   string `json:"department,omitempty"` // 学院/部门，可选
-	Position     string `json:"position,omitempty"`   // 职务/身份，可选
-}
-
-type ResumeEntry_mod struct {
 	ID           int    `json:"id"`
 	CadreID      string `json:"user_id"`
 	StartDate    string `json:"start_date"`           // 格式：2007.09 或 2019.12
@@ -19,9 +10,10 @@ type ResumeEntry_mod struct {
 	Organization string `json:"organization"`         // 工作单位或学校
 	Department   string `json:"department,omitempty"` // 学院/部门，可选
 	Position     string `json:"position,omitempty"`   // 职务/身份，可选
+	IsAudited    int    `json:"is_audited"`
 }
 
-func (r *ResumeEntry_mod) Add_resume_mod() error {
+func (r *ResumeEntry) Add_resume() error {
 	Cinfo := map[string]interface{}{
 		"user_id":      r.CadreID,
 		"start_date":   r.StartDate,
@@ -37,32 +29,23 @@ func (r *ResumeEntry_mod) Add_resume_mod() error {
 	return nil
 }
 
-type ResumeEntryModifications struct {
-	ID      int
-	CadreID string
-}
-
-func (rem *ResumeEntry_mod) ExistByID() (bool, error) {
+func (rem *ResumeEntry) ExistByID() (bool, error) {
 	return models.ExistResumeEntryModificationByID(rem.ID)
 }
 
-func (rem *ResumeEntryModifications) ExistByID() (bool, error) {
-	return models.ExistResumeEntryModificationByID(rem.ID)
-}
-
-func (rem *ResumeEntryModifications) GetByID() (*models.ResumeEntry_modifications, error) {
+func (rem *ResumeEntry) GetByID() (*models.ResumeEntry, error) {
 	return models.GetResumeEntryModificationByID(rem.ID)
 }
 
-func (rem *ResumeEntryModifications) GetByCadreID() ([]models.ResumeEntry_modifications, error) {
-	return models.GetResumeEntryModificationsByCadreID(rem.CadreID)
+func (rem *ResumeEntry) GetByCadreID() ([]models.ResumeEntry, error) {
+	return models.GetResumeEntryByCadreID(rem.CadreID)
 }
 
-func (rem *ResumeEntryModifications) DeleteByID() error {
-	return models.DeleteResumeEntryModificationByID(rem.ID)
+func (rem *ResumeEntry) DeleteByID() error {
+	return models.DeleteResumeEntryByID(rem.ID)
 }
 
-func (r *ResumeEntry_mod) EditResumeMod() error {
+func (r *ResumeEntry) EditResumeMod() error {
 	data := map[string]interface{}{
 		"user_id":      r.CadreID,
 		"start_date":   r.StartDate,
@@ -72,14 +55,6 @@ func (r *ResumeEntry_mod) EditResumeMod() error {
 		"position":     r.Position,
 	}
 	return models.EditResumeEntryModification(r.ID, data)
-}
-
-type ResumeEntryDelete struct {
-	ID int
-}
-
-func (red *ResumeEntryDelete) Delete() error {
-	return models.DeleteResumeEntryByID(red.ID)
 }
 
 type ComfirmResume struct {

@@ -40,7 +40,7 @@ type Cadre struct {
 	ReportingUnit             string `gorm:"type:varchar(200);column:reporting_unit" json:"reporting_unit"`
 	ApprovalAuthority         string `gorm:"type:text;column:approval_authority" json:"approval_authority"`
 	AdministrativeAppointment string `gorm:"type:text;column:administrative_appointment" json:"administrative_appointment"`
-	Audited                   int    `gorm:"default:0;column:audit_status"`
+	IsAudited                 int    `gorm:"default:0;column:is_audited" json:"is_audited"`
 }
 
 func (Cadre) TableName() string {
@@ -106,7 +106,7 @@ func (c *Cadre) CalculateAge() error {
 	return nil
 }
 
-func AddCadreInfo_mod(data map[string]interface{}) error {
+func AddCadre(data map[string]interface{}) error {
 	cadreInfo := Cadre{
 		ID:                        data["user_id"].(string),
 		Name:                      data["name"].(string),
@@ -156,21 +156,21 @@ func EditCadreInfoByID(id string, data map[string]interface{}) error {
 	return db.Model(&Cadre{}).Where("user_id = ?", id).Updates(data).Error
 }
 
-func DeleteCadreInfoModByID(id string) error {
+func DeleteCadreByID(id string) error {
 
-	if err := db.Where("user_id = ? and is_audited = ?", id, 0).Delete(&Familymember{}).Error; err != nil {
+	if err := db.Where("user_id = ?", id).Delete(&Familymember{}).Error; err != nil {
 		return err
 	}
 
-	if err := db.Where("user_id = ? and is_audited = ?", id, 0).Delete(&ResumeEntry{}).Error; err != nil {
+	if err := db.Where("user_id = ?", id).Delete(&ResumeEntry{}).Error; err != nil {
 		return err
 	}
 
-	if err := db.Where("user_id = ? and is_audited = ?", id, 0).Delete(&PositionHistory_mod{}).Error; err != nil {
+	if err := db.Where("user_id = ?", id).Delete(&Positionhistory{}).Error; err != nil {
 		return err
 	}
 
-	if err := db.Where("user_id = ? and is_audited = ?", id, 0).Delete(&Cadre{}).Error; err != nil {
+	if err := db.Where("user_id = ?", id).Delete(&Cadre{}).Error; err != nil {
 		return err
 	}
 
@@ -230,6 +230,25 @@ func UpdateCadreInfoModPhotoURL(cadreid, photoURL string) error {
 	mod.PhotoUrl = photoURL
 	if err := db.Save(&mod).Error; err != nil {
 		return fmt.Errorf("更新干部信息修改记录的 photourl 字段失败: %v", err)
+	}
+
+	return nil
+}
+
+func ComfirmCadre(cadreid string) error {
+	result := db.Model(&Cadre{}).
+		Where("user_id = ? and is_audited = 0", cadreid).
+		Updates(map[string]interface{}{
+			"is_audited": 1, // Using column name from struct tag
+		})
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	// Check if any record was actually updated
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
 	}
 
 	return nil

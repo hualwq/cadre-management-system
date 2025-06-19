@@ -5,12 +5,13 @@ import (
 	"cadre-management/pkg/e"
 	"cadre-management/pkg/setting"
 	"cadre-management/pkg/utils"
-	"cadre-management/services/admin_service"
-	"cadre-management/services/assessment_mod_service"
-	"cadre-management/services/cadre_service"
-	"cadre-management/services/familymember_service"
+	"cadre-management/services/Admin_service"
+	"cadre-management/services/Assessment_service"
+	"cadre-management/services/Cadre_service"
+	"cadre-management/services/Familymember_service"
+	"cadre-management/services/Positionhistory_service"
+	"cadre-management/services/Resume_service"
 	"cadre-management/services/message_service"
-	"cadre-management/services/resume_service"
 	"net/http"
 	"strconv"
 	"strings"
@@ -20,15 +21,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
-
-type AddPositionHistoryForm struct {
-	CadreID      string `json:"user_id" binding:"required"`
-	Department   string `json:"department" binding:"required"`
-	PositionType string `json:"position_type" binding:"required,oneof=专职团干部 兼职团干部 教师 学生 其他"`
-	StartDate    string `json:"start_date" binding:"required"`
-	EndDate      string `json:"end_date,omitempty"`
-	Description  string `json:"description,omitempty"`
-}
 
 type GetCadreInfoForm_mod struct {
 	CadreID string `json:"user_id" binding:"required"`
@@ -64,7 +56,7 @@ type ComfirmfamilymemberForm struct {
 	// 这里可以根据实际需求添加其他必要的字段
 }
 
-func ComfirmAssessment(c *gin.Context) {
+func ConfirmAssessment(c *gin.Context) {
 	var (
 		appG = app.Gin{C: c}
 		form ComfirmAssessmentForm
@@ -77,7 +69,7 @@ func ComfirmAssessment(c *gin.Context) {
 		return
 	}
 
-	AssessmentService := assessment_mod_service.ComfirmAssessment{
+	AssessmentService := Assessment_service.ComfirmAssessment{
 		Grade: form.Result,
 		ID:    form.ID,
 	}
@@ -99,7 +91,7 @@ func GetCadreInfo_mod(c *gin.Context) {
 		return
 	}
 
-	Cadreservice := cadre_service.CadreInfo_mod{ID: userId}
+	Cadreservice := Cadre_service.Cadre{ID: userId}
 	cadre, err := Cadreservice.GetCadreInfo()
 	if err != nil {
 		// 根据错误类型返回不同状态码
@@ -125,9 +117,9 @@ func ComfirmCadreInfo(c *gin.Context) {
 		appG.Response(httpCode, errCode, nil)
 		return
 	}
-	cadreService := cadre_service.CadreInfo_mod{ID: form.CadreID}
+	cadreService := Cadre_service.Cadre{ID: form.CadreID}
 
-	if err := cadreService.ComfirmCadreInfo(); err != nil {
+	if err := cadreService.ComfirmCadre(); err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_ADD_CADRE_FAIL, nil)
 		return
 	}
@@ -150,7 +142,7 @@ func ConfirmPositionhistory(c *gin.Context) {
 	}
 
 	// 构造服务层结构体
-	confirmService := admin_service.PositionHistory{
+	confirmService := Positionhistory_service.Positionhistory{
 		CadreID: form.CadreID,
 	}
 
@@ -170,15 +162,15 @@ func GetCadreInfoModByPage(c *gin.Context) {
 	id := c.Query("user_id")
 	gender := c.Query("gender")
 	auditedStr := c.Query("audited")
-	var audited *bool
+
+	audited := -1
 	if auditedStr != "" {
-		boolValue, err := strconv.ParseBool(auditedStr)
-		if err == nil {
-			audited = &boolValue
+		if val, err := strconv.Atoi(auditedStr); err == nil {
+			audited = val
 		}
 	}
 
-	cadreInfoService := admin_service.GetCadreInfoModByPage{
+	cadreInfoService := Admin_service.GetCadreInfoModByPage{
 		Name:       name,
 		Department: department,
 		Gender:     gender,
@@ -218,15 +210,14 @@ func GetAssessmentsMod(c *gin.Context) {
 		year = com.StrTo(yearStr).MustInt()
 	}
 	auditedStr := c.Query("audited")
-	var audited *bool
+	audited := -1
 	if auditedStr != "" {
-		boolValue, err := strconv.ParseBool(auditedStr)
-		if err == nil {
-			audited = &boolValue
+		if val, err := strconv.Atoi(auditedStr); err == nil {
+			audited = val
 		}
 	}
 
-	assessmentService := assessment_mod_service.Assessment_mod{
+	assessmentService := Assessment_service.Assessment{
 		Name:       name,
 		CadreID:    cadreID,
 		Department: department,
@@ -255,7 +246,7 @@ func GetAssessmentsMod(c *gin.Context) {
 	})
 }
 
-func GetAssessmentsModByID(c *gin.Context) {
+func GetAssessmentByID(c *gin.Context) {
 	appG := app.Gin{C: c}
 	id := com.StrTo(c.Query("id")).MustInt()
 	valid := validation.Validation{}
@@ -267,7 +258,7 @@ func GetAssessmentsModByID(c *gin.Context) {
 		return
 	}
 
-	assesementService := assessment_mod_service.GetAssessment_modID{ID: id}
+	assesementService := Assessment_service.Assessment{ID: id}
 	exists, err := assesementService.ExistByID()
 	if err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_CHECK_EXIST_ASSESEMENT_FAIL, nil)
@@ -296,7 +287,7 @@ func GetpoexpmodByID(c *gin.Context) {
 		return
 	}
 
-	posexpModService := admin_service.GetPosexpModID{
+	posexpModService := Positionhistory_service.Posexp{
 		ID: id,
 	}
 	exists, err := posexpModService.ExistByID()
@@ -318,7 +309,7 @@ func GetpoexpmodByID(c *gin.Context) {
 	appG.Response(http.StatusOK, e.SUCCESS, posexpMod)
 }
 
-func GetPoexpModByCadreID(c *gin.Context) {
+func GetPoexpModByPosID(c *gin.Context) {
 	appG := app.Gin{C: c}
 	userID := c.Query("user_id")
 
@@ -327,20 +318,11 @@ func GetPoexpModByCadreID(c *gin.Context) {
 		return
 	}
 
-	poexpModService := admin_service.GetPoexpModByCadreID{
+	poexpModService := Positionhistory_service.Posexp{
 		CadreID: userID,
 	}
-	exists, err := poexpModService.ExistByCadreID()
-	if err != nil {
-		appG.Response(http.StatusInternalServerError, e.ERROR_GET_POEXPMOD_FAIL, nil)
-		return
-	}
-	if !exists {
-		appG.Response(http.StatusNotFound, e.ERROR_GET_POEXPMOD_FAIL, nil)
-		return
-	}
 
-	poexpMods, err := poexpModService.Get()
+	poexpMods, err := poexpModService.GetAll()
 	if err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_GET_POEXPMOD_FAIL, nil)
 		return
@@ -363,7 +345,7 @@ func Comfirmpoexp(c *gin.Context) {
 	}
 
 	// 调用服务层的确认逻辑
-	poexpService := admin_service.Comfirmpoexp{
+	poexpService := Admin_service.Comfirmpoexp{
 		CadreID: form.CadreID,
 	}
 	if err := poexpService.Comfirmpoexp(); err != nil {
@@ -377,22 +359,19 @@ func Comfirmpoexp(c *gin.Context) {
 
 func GetPositionHistoriesMod(c *gin.Context) {
 	appG := app.Gin{C: c}
-	name := c.Query("name")
 	department := c.Query("department")
 	category := c.Query("category")
 	office := c.Query("office")
 	academicYear := c.Query("academic_year")
 	auditedStr := c.Query("audited")
-	var audited *bool
+	audited := -1
 	if auditedStr != "" {
-		boolValue, err := strconv.ParseBool(auditedStr)
-		if err == nil {
-			audited = &boolValue
+		if val, err := strconv.Atoi(auditedStr); err == nil {
+			audited = val
 		}
 	}
 
-	positionHistoryService := cadre_service.GetPositionHistory_mod{
-		Name:         name,
+	positionHistoryService := Positionhistory_service.Positionhistory{
 		Department:   department,
 		Category:     category,
 		Office:       office,
@@ -431,7 +410,7 @@ func GetPositionHistoryMod(c *gin.Context) {
 		return
 	}
 
-	positionHistoryModService := cadre_service.PositionHistoryModService{
+	positionHistoryModService := Positionhistory_service.Positionhistory{
 		ID: id,
 	}
 	positionHistoryMod, err := positionHistoryModService.Get()
@@ -460,7 +439,7 @@ func GetFamilyMemberModification(c *gin.Context) {
 		return
 	}
 
-	familyMemberModificationsService := familymember_service.FamilyMemberModifications{ID: id}
+	familyMemberModificationsService := Familymember_service.FamilyMember{ID: id}
 	exists, err := familyMemberModificationsService.ExistByID()
 	if err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_FAMILYMEMBERIES_FAIL, nil)
@@ -492,7 +471,7 @@ func GetFamilyMemberModificationsByCadreID(c *gin.Context) {
 		return
 	}
 
-	familyMemberModificationsService := familymember_service.FamilyMemberModifications_cadreinfo{
+	familyMemberModificationsService := Familymember_service.FamilyMember{
 		CadreID: cadreID,
 	}
 	familyMemberModifications, err := familyMemberModificationsService.GetByCadreID()
@@ -513,10 +492,10 @@ func DeletePosexpmodbyID(c *gin.Context) {
 		return
 	}
 
-	posexpService := admin_service.DeletePosexpModByID{
+	posexpService := Positionhistory_service.Posexp{
 		ID: id,
 	}
-	if err := posexpService.DeleteMod(); err != nil {
+	if err := posexpService.DeleteByID(); err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_DELETE_POSEXP_FAIL, nil)
 		return
 	}
@@ -533,10 +512,10 @@ func DeletePosexpByID(c *gin.Context) {
 		return
 	}
 
-	posexpService := admin_service.DeletePosexpByID{
+	posexpService := Positionhistory_service.Posexp{
 		ID: id,
 	}
-	if err := posexpService.Delete(); err != nil {
+	if err := posexpService.DeleteByID(); err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_DELETE_POSEXP_FAIL, nil)
 		return
 	}
@@ -544,7 +523,7 @@ func DeletePosexpByID(c *gin.Context) {
 	appG.Response(http.StatusOK, e.SUCCESS, nil)
 }
 
-func DeleteAssessmentmodbyID(c *gin.Context) {
+func DeleteAssessment(c *gin.Context) {
 	appG := app.Gin{C: c}
 	idStr := c.Query("id")
 	id, err := strconv.Atoi(idStr)
@@ -553,7 +532,7 @@ func DeleteAssessmentmodbyID(c *gin.Context) {
 		return
 	}
 
-	assessmentService := assessment_mod_service.DeleteAssessmentModByID{
+	assessmentService := Assessment_service.Assessment{
 		ID: id,
 	}
 	if err := assessmentService.Delete(); err != nil {
@@ -573,7 +552,7 @@ func DeleteAssessmentbyID(c *gin.Context) {
 		return
 	}
 
-	assessmentService := assessment_mod_service.DeleteAssessmentByID{
+	assessmentService := Assessment_service.Assessment{
 		ID: id,
 	}
 	if err := assessmentService.Delete(); err != nil {
@@ -596,7 +575,7 @@ func DeleteFamilyMemberByID(c *gin.Context) {
 		return
 	}
 
-	familyMemberService := familymember_service.FamilyMemberDelete{ID: id}
+	familyMemberService := Familymember_service.FamilyMember{ID: id}
 	err := familyMemberService.Delete()
 	if err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_FAMILYMEMBERIES_FAIL, nil)
@@ -618,7 +597,7 @@ func DeletePositionhistorybyID(c *gin.Context) {
 		return
 	}
 
-	positionHistoryService := admin_service.PositionHistoryDelete{ID: id}
+	positionHistoryService := Admin_service.PositionHistoryDelete{ID: id}
 	err := positionHistoryService.Delete()
 	if err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_GET_POSITION_HISTORIES_FAIL, nil)
@@ -640,7 +619,7 @@ func DeleteCadreInfoByID(c *gin.Context) {
 		return
 	}
 
-	cadreInfoService := admin_service.CadreInfoDelete{ID: id}
+	cadreInfoService := Admin_service.CadreInfoDelete{ID: id}
 	err := cadreInfoService.Delete()
 	if err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_GET_CADREINFO_FAIL, nil)
@@ -662,8 +641,8 @@ func DeleteResumeEntryByID(c *gin.Context) {
 		return
 	}
 
-	resumeEntryService := resume_service.ResumeEntryDelete{ID: id}
-	err := resumeEntryService.Delete()
+	resumeEntryService := Resume_service.ResumeEntry{ID: id}
+	err := resumeEntryService.DeleteByID()
 	if err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_RESUME_FAIL, nil)
 		return
@@ -685,7 +664,7 @@ func ComfirmResume(c *gin.Context) {
 		return
 	}
 
-	ResumeService := resume_service.ComfirmResume{
+	ResumeService := Resume_service.ComfirmResume{
 		ID: form.ID,
 	}
 
@@ -710,9 +689,8 @@ func Comfirmfamilymember(c *gin.Context) {
 		return
 	}
 
-	FamilyMemberService := familymember_service.Comfirmfamilymember{
+	FamilyMemberService := Familymember_service.FamilyMember{
 		ID: form.ID,
-		// 这里可以根据实际需求初始化其他字段
 	}
 
 	if err := FamilyMemberService.Comfirmfamilymember(); err != nil {

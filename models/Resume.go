@@ -12,7 +12,7 @@ type ResumeEntry struct {
 	Organization string `json:"organization"`         // 工作单位或学校
 	Department   string `json:"department,omitempty"` // 学院/部门，可选
 	Position     string `json:"position,omitempty"`   // 职务/身份，可选
-	Audited      int    `gorm:"default:0;column:audit_status"`
+	IsAudited    int    `gorm:"default:0;column:is_audited" json:"is_audited"`
 }
 
 func (ResumeEntry) TableName() string {
@@ -68,7 +68,7 @@ func GetResumeEntryModificationByID(id int) (*ResumeEntry, error) {
 }
 
 // GetResumeEntryModificationsByCadreID 根据 CadreID 获取履历条目修改记录列表
-func GetResumeEntryModificationsByCadreID(cadreID string) ([]ResumeEntry, error) {
+func GetResumeEntryByCadreID(cadreID string) ([]ResumeEntry, error) {
 	var entries []ResumeEntry
 	err := db.Where("user_id = ?", cadreID).Find(&entries).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
@@ -78,7 +78,7 @@ func GetResumeEntryModificationsByCadreID(cadreID string) ([]ResumeEntry, error)
 }
 
 // DeleteResumeEntryModificationByID 根据 ID 删除单个履历条目修改记录
-func DeleteResumeEntryModificationByID(id int) error {
+func DeleteResumeEntryByID(id int) error {
 	if err := db.Where("id = ?", id).Delete(ResumeEntry{}).Error; err != nil {
 		return err
 	}
@@ -95,5 +95,25 @@ func EditResumeEntryModification(id int, data map[string]interface{}) error {
 	if result.RowsAffected == 0 {
 		return gorm.ErrRecordNotFound
 	}
+	return nil
+}
+
+func ComfirmResume(id int) error {
+	// Update the assessment's grade and set audited status to 1
+	result := db.Model(&ResumeEntry{}).
+		Where("id = ? and is_audited = 0", id).
+		Updates(map[string]interface{}{
+			"is_audited": 1, // Using column name from struct tag
+		})
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	// Check if any record was actually updated
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
 	return nil
 }

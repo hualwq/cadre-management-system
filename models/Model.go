@@ -110,3 +110,27 @@ func addExtraSpaceIfExist(str string) string {
 	}
 	return ""
 }
+
+// GetDB 返回全局的数据库连接实例
+func GetDB() *gorm.DB {
+	// 检查全局 db 变量是否已初始化
+	if db == nil {
+		Setup() // 如果未初始化，先进行初始化
+	}
+
+	// 检查连接是否有效
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Printf("Failed to get underlying sql.DB: %v", err)
+		Setup() // 尝试重新连接
+		return db
+	}
+
+	// 检查连接是否存活
+	if err := sqlDB.Ping(); err != nil {
+		log.Printf("Database connection lost, reconnecting...: %v", err)
+		Setup() // 重新连接
+	}
+
+	return db
+}

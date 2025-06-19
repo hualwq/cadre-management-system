@@ -133,7 +133,6 @@ func RegisterUser(data map[string]interface{}) error {
 		UserID:   userID,
 		Name:     data["name"].(string),
 		Password: string(hashedPassword),
-		Role:     "cadre", // 默认角色
 	}
 
 	return db.Create(&newUser).Error

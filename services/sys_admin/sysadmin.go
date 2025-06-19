@@ -1,4 +1,4 @@
-package sys_admin
+package Sys_admin
 
 import (
 	"cadre-management/models"
@@ -31,7 +31,6 @@ func (u *User) GetAllUser() ([]User, error) {
 	for _, dbUser := range dbUsers {
 		serviceUsers = append(serviceUsers, User{
 			Name: dbUser.Name,
-			Role: dbUser.Role,
 		})
 	}
 
@@ -50,7 +49,6 @@ func (u *GetUser) GetUserByPage(page, pageSize int) ([]User, error) {
 	for _, dbUser := range dbUsers {
 		serviceUsers = append(serviceUsers, User{
 			Name: dbUser.Name,
-			Role: dbUser.Role,
 		})
 	}
 

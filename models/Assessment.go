@@ -9,7 +9,7 @@ import (
 )
 
 // Assessment 干部考核模型
-type Assessment_mod struct {
+type Assessment struct {
 	ID          int    `gorm:"primaryKey;autoIncrement" json:"id"`
 	Name        string `gorm:"type:varchar(50);not null;" json:"name"`
 	CadreID     string `gorm:"type:varchar(20);column:user_id" json:"user_id"`
@@ -21,16 +21,16 @@ type Assessment_mod struct {
 	Year        int    `gorm:"type:int;not null;" json:"year"`
 	WorkSummary string `gorm:"type:text;not null;" json:"work_summary"`
 	Grade       string `gorm:"type:varchar(10);not null;" json:"grade"`
-	Audited     bool   `gorm:"default:false;column:is_audited"`
+	Audited     int    `gorm:"default:0;column:audit_status"`
 }
 
-func (Assessment_mod) TableName() string {
-	return "cadm_assessments_mod"
+func (Assessment) TableName() string {
+	return "cadm_assessment"
 }
 
-func GetAssessmentsMod(pageNum int, pageSize int, maps interface{}) ([]Assessment_mod, error) {
+func GetAssessmentsMod(pageNum int, pageSize int, maps interface{}) ([]Assessment, error) {
 	var (
-		assessments []Assessment_mod
+		assessments []Assessment
 		err         error
 	)
 
@@ -49,13 +49,13 @@ func GetAssessmentsMod(pageNum int, pageSize int, maps interface{}) ([]Assessmen
 
 func GetAssessmentModTotal(maps interface{}) (int64, error) {
 	var count int64
-	if err := db.Model(&Assessment_mod{}).Where(maps).Count(&count).Error; err != nil {
+	if err := db.Model(&Assessment{}).Where(maps).Count(&count).Error; err != nil {
 		return 0, err
 	}
 	return count, nil
 }
 
-func AddAssessment_mod(data map[string]interface{}) error {
+func AddAssessment(data map[string]interface{}) error {
 	// 1. 从 data 中解析必需字段
 	userID, ok := data["user_id"].(string)
 	if !ok || userID == "" {
@@ -63,7 +63,7 @@ func AddAssessment_mod(data map[string]interface{}) error {
 	}
 
 	// 2. 查询 cadre_info 表获取干部基本信息
-	var cadre CadreInfo
+	var cadre Cadre
 	if err := db.Where("user_id = ?", userID).First(&cadre).Error; err != nil {
 		return fmt.Errorf("failed to find cadre info: %v", err)
 	}
@@ -85,7 +85,7 @@ func AddAssessment_mod(data map[string]interface{}) error {
 	}
 
 	// 6. 创建 Assessment 对象
-	assessment := Assessment_mod{
+	assessment := Assessment{
 		Name:        cadre.Name,
 		CadreID:     userID,
 		Phone:       cadre.Phone,
@@ -99,7 +99,7 @@ func AddAssessment_mod(data map[string]interface{}) error {
 	}
 
 	// 7. 检查是否已存在相同记录
-	var existing Assessment_mod
+	var existing Assessment
 	err := db.Where("user_id = ? AND year = ?", userID, year).First(&existing).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return fmt.Errorf("failed to check existing assessment: %v", err)
@@ -121,7 +121,7 @@ func AddAssessment_mod(data map[string]interface{}) error {
 }
 
 func ExistAssesementByID(id int) (bool, error) {
-	var assesement Assessment_mod
+	var assesement Assessment
 	err := db.Select("id").Where("id = ? AND deleted_on = ? ", id, 0).First(&assesement).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return false, err
@@ -135,8 +135,8 @@ func ExistAssesementByID(id int) (bool, error) {
 }
 
 // GetAssesement Get a single assessment based on ID
-func GetAssesement(id int) (*Assessment_mod, error) {
-	var assesement Assessment_mod
+func GetAssesement(id int) (*Assessment, error) {
+	var assesement Assessment
 	err := db.Where("id = ?", id).First(&assesement).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
@@ -149,7 +149,7 @@ func DeleteAssessmentModByID(id int) error {
 	if id <= 0 {
 		return errors.New("无效的考核记录 ID")
 	}
-	result := db.Where("id = ?", id).Delete(&Assessment_mod{})
+	result := db.Where("id = ?", id).Delete(&Assessment{})
 	if result.Error != nil {
 		return result.Error
 	}
@@ -161,7 +161,7 @@ func DeleteAssessmentModByID(id int) error {
 
 func ExistAssessmentModByID(id int) (bool, error) {
 	var count int64
-	err := db.Model(&Assessment_mod{}).Where("id = ? and is_audited = false", id).Count(&count).Error
+	err := db.Model(&Assessment{}).Where("id = ? and is_audited = false", id).Count(&count).Error
 	if err != nil {
 		return false, err
 	}
@@ -169,7 +169,5 @@ func ExistAssessmentModByID(id int) (bool, error) {
 }
 
 func EditAssessmentModByID(id int, data map[string]interface{}) error {
-	return db.Model(&Assessment_mod{}).Where("id = ?", id).Updates(data).Error
+	return db.Model(&Assessment{}).Where("id = ?", id).Updates(data).Error
 }
-
-

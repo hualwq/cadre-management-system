@@ -76,6 +76,10 @@ func (a *Assessment_mod) GetAll() ([]models.Assessment_mod, error) {
 func (a *Assessment_mod) getMaps() map[string]interface{} {
 	maps := make(map[string]interface{})
 
+	if a.UserID != "" {
+		maps["user_id"] = a.UserID
+	}
+
 	if a.Name != "" {
 		maps["name"] = a.Name
 	}

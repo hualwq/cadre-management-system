@@ -288,10 +288,9 @@ func GetPosExpTotalByPosID(posID int) (int64, error) {
 	return count, nil
 }
 
-func GetPosExpByPosID(posID int, pageNum, pageSize int) ([]Posexp_mod, error) {
+func GetPosExpByPosID(posID int) ([]Posexp_mod, error) {
 	var posExps []Posexp_mod
-	offset := (pageNum - 1) * pageSize
-	err := db.Where("pos_id= ?", posID).Offset(offset).Limit(pageSize).Find(&posExps).Error
+	err := db.Where("pos_id= ?", posID).Find(&posExps).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
 	}

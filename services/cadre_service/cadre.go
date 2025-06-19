@@ -123,7 +123,7 @@ type Posexp_mod struct {
 }
 
 func (s *Posexp_mod) GetAll() ([]models.Posexp_mod, error) {
-	return models.GetPosExpByPosID(s.PosID, s.PageNum, s.PageSize)
+	return models.GetPosExpByPosID(s.PosID)
 }
 
 func (s *Posexp_mod) Count() (int64, error) {
@@ -313,6 +313,10 @@ func (p *GetPositionHistory_mod) Count() (int64, error) {
 
 func (p *GetPositionHistory_mod) getMaps() map[string]interface{} {
 	maps := make(map[string]interface{})
+
+	if p.UserID != "" {
+		maps["user_id"] = p.UserID
+	}
 
 	if p.Name != "" {
 		maps["name"] = p.Name

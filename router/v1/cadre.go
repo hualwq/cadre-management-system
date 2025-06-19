@@ -1002,20 +1002,15 @@ func GetAssessmentModsByPage(c *gin.Context) {
 func GetPosExpByPosID(c *gin.Context) {
 	appG := app.Gin{C: c}
 
-	posIDStr := c.Query("posid")
+	posIDStr := c.Query("id")
 	posID, err := strconv.Atoi(posIDStr)
 	if err != nil {
 		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
 		return
 	}
 
-	pageNum := utils.GetPage(c)
-	pageSize := setting.AppSetting.PageSize
-
 	service := cadre_service.Posexp_mod{
-		PosID:    posID,
-		PageNum:  pageNum,
-		PageSize: pageSize,
+		PosID: posID,
 	}
 
 	posExps, err := service.GetAll()

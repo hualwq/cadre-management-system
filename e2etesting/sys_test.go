@@ -482,7 +482,7 @@ func TestGETCadreinfoByID(t *testing.T) {
 
 	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiOWYwMDFlNDE2NmNmMjZiZmJkZDNiNGY2N2Q5ZWY2MTciLCJwYXNzd29yZCI6ImM4MTU4MDkzMjMyOWIwMWJjMmZjMTMwYjBjNTIxZDk2Iiwicm9sZSI6ImFkbWluIiwiZXhwIjoxNzUwNjY4MDUxfQ.GR4QGGXnTz9H6KzH0pnVicRauwGcuf0huvTbOOvCVsI"
 
-	user_id := "11111111"
+	user_id := "111111111"
 	baseurl := "/admin/cadreinfo?"
 	queryParams := fmt.Sprintf("user_id=%s", user_id)
 	fullurl := baseurl + queryParams
@@ -704,5 +704,89 @@ func TestGetPositionhistoryByPage(t *testing.T) {
 }
 
 func TestGetAssesementByPage(t *testing.T) {
+	r := router.InitRouter()
 
+	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTExMTExMTExIiwicGFzc3dvcmQiOiI5OTYwZGQ4ODRmMDZlODM5NjllNzM2YjNlYWUwYTUwYiIsInJvbGUiOiJjYWRyZSIsImV4cCI6MTc1MDc3MDQzM30.nP-EW90FIw99oarnnEnjL5MktPn9Rf-FKsiTZST4oWw"
+
+	page := 1
+	pageSize := 10
+	baseurl := "/cadre/getasmodbypage?"
+	queryParams := fmt.Sprintf("page=%d&pagesize=%d", page, pageSize)
+	fullurl := baseurl + queryParams
+
+	// 创建一个HTTP请求
+	req, err := http.NewRequest("GET", fullurl, nil)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	assert.NoError(t, err)
+
+	// 创建一个响应记录器
+	rr := httptest.NewRecorder()
+
+	// 执行请求
+	r.ServeHTTP(rr, req)
+
+	// 断言响应状态码
+	assert.Equal(t, http.StatusOK, rr.Code)
+	t.Logf("响应状态码: %d", rr.Code)
+	t.Logf("响应内容: %s", rr.Body.String())
+}
+
+func TestGetPoexpbyPosid(t *testing.T) {
+	r := router.InitRouter()
+
+	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTExMTExMTExIiwicGFzc3dvcmQiOiI5OTYwZGQ4ODRmMDZlODM5NjllNzM2YjNlYWUwYTUwYiIsInJvbGUiOiJjYWRyZSIsImV4cCI6MTc1MDc3MDQzM30.nP-EW90FIw99oarnnEnjL5MktPn9Rf-FKsiTZST4oWw"
+
+	posid := 5
+	baseurl := "/cadre/getposexpbyposid?"
+	queryParams := fmt.Sprintf("id=%d", posid)
+	fullurl := baseurl + queryParams
+
+	// 创建一个HTTP请求
+	req, err := http.NewRequest("GET", fullurl, nil)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	assert.NoError(t, err)
+
+	// 创建一个响应记录器
+	rr := httptest.NewRecorder()
+
+	// 执行请求
+	r.ServeHTTP(rr, req)
+
+	// 断言响应状态码
+	assert.Equal(t, http.StatusOK, rr.Code)
+	t.Logf("响应状态码: %d", rr.Code)
+	t.Logf("响应内容: %s", rr.Body.String())
+}
+
+func TestGetPositionhistoryByID(t *testing.T) {
+	r := router.InitRouter()
+
+	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiMTExMTExMTExIiwicGFzc3dvcmQiOiI5OTYwZGQ4ODRmMDZlODM5NjllNzM2YjNlYWUwYTUwYiIsInJvbGUiOiJjYWRyZSIsImV4cCI6MTc1MDc3MDQzM30.nP-EW90FIw99oarnnEnjL5MktPn9Rf-FKsiTZST4oWw"
+
+	id := 5
+	baseurl := "/admin/phmodbyid?"
+	queryParams := fmt.Sprintf("id=%d", id)
+	fullurl := baseurl + queryParams
+
+	// 创建一个HTTP请求
+	req, err := http.NewRequest("GET", fullurl, nil)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	assert.NoError(t, err)
+
+	// 创建一个响应记录器
+	rr := httptest.NewRecorder()
+
+	// 执行请求
+	r.ServeHTTP(rr, req)
+
+	// 断言响应状态码
+	assert.Equal(t, http.StatusOK, rr.Code)
+	t.Logf("响应状态码: %d", rr.Code)
+	t.Logf("响应内容: %s", rr.Body.String())
 }

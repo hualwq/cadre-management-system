@@ -18,7 +18,7 @@ type Familymember struct {
 }
 
 func (Familymember) TableName() string {
-	return "cadm_family_members_mod"
+	return "cadm_family_members"
 }
 
 func Add_familymember_mod(data map[string]interface{}) error {

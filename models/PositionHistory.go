@@ -21,11 +21,11 @@ type PositionHistory_mod struct {
 	Year         uint   `gorm:"not null;column:applied_at_year;type:int unsigned" json:"applied_at_year"`
 	Month        uint   `gorm:"column:applied_at_month;type:tinyint unsigned" json:"applied_at_month"`
 	Day          uint   `gorm:"column:applied_at_day;type:tinyint unsigned" json:"applied_at_day"`
-	Audited      bool   `gorm:"default:false;column:is_audited"`
+	Audited      int    `gorm:"default:0;column:audit_status"`
 	PosID        int    `gorm:"not null;column:pos_id" json:"pos_id"`
 }
 
-type Posexp_mod struct {
+type Posexp struct {
 	ID         int    `gorm:"primaryKey;autoIncrement" json:"id"`
 	CadreID    string `gorm:"size:50;column:user_id" json:"user_id"` // ✅ 用空格分隔两个标签
 	Posyear    string `gorm:"size:20" json:"year"`
@@ -35,11 +35,11 @@ type Posexp_mod struct {
 }
 
 func (PositionHistory_mod) TableName() string {
-	return "cadm_position_histories_mod"
+	return "cadm_position_histories"
 }
 
-func (Posexp_mod) TableName() string {
-	return "cadm_posexp_mod"
+func (Posexp) TableName() string {
+	return "cadm_Posexp"
 }
 
 func AddPositionHistory_mod(data map[string]interface{}) error {
@@ -50,7 +50,7 @@ func AddPositionHistory_mod(data map[string]interface{}) error {
 	}
 
 	// 查询 cadre_info 表获取其他信息
-	var cadre CadreInfo
+	var cadre Cadre
 	if err := db.Where("user_id = ?", cadreID).First(&cadre).Error; err != nil {
 		return fmt.Errorf("请先编辑基本信息或等管理员审核信息")
 	}
@@ -93,7 +93,7 @@ func AddPositionHistory_mod(data map[string]interface{}) error {
 }
 
 func Addyearpositon(data map[string]interface{}) error {
-	posexp := Posexp_mod{
+	posexp := Posexp{
 		CadreID:    data["user_id"].(string),
 		Posyear:    data["year"].(string),
 		Department: data["department"].(string),
@@ -173,7 +173,7 @@ func ExistPositionHistoryByID(id int) (bool, error) {
 }
 
 func ExistPosexpModByID(id int) (bool, error) {
-	var posexpMod Posexp_mod
+	var posexpMod Posexp
 	err := db.Select("id").Where("id = ? and is_audited = ?", id, 0).First(&posexpMod).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return false, err
@@ -184,8 +184,8 @@ func ExistPosexpModByID(id int) (bool, error) {
 	return false, nil
 }
 
-func GetPosexpModByID(id int) (*Posexp_mod, error) {
-	var posexpMod Posexp_mod
+func GetPosexpModByID(id int) (*Posexp, error) {
+	var posexpMod Posexp
 	err := db.Where("id = ?", id).First(&posexpMod).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
@@ -203,7 +203,7 @@ func EditPositionHistoryMod(id int, data map[string]interface{}) error {
 }
 
 func ExistPoexpModByCadreID(cadreID string) (bool, error) {
-	var poexpMod Posexp_mod
+	var poexpMod Posexp
 	err := db.Select("id").Where("user_id = ? and is_audited = ?", cadreID, 0).First(&poexpMod).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return false, err
@@ -215,8 +215,8 @@ func ExistPoexpModByCadreID(cadreID string) (bool, error) {
 }
 
 // GetPoexpModByCadreID 根据 CadreID 获取 PoexpMod 记录
-func GetPoexpModByCadreID(cadreID string) ([]Posexp_mod, error) {
-	var poexpMods []Posexp_mod
+func GetPoexpModByCadreID(cadreID string) ([]Posexp, error) {
+	var poexpMods []Posexp
 	err := db.Where("user_id = ? and is_audited = ?", cadreID, 0).Find(&poexpMods).Error
 	if err != nil {
 		return nil, err
@@ -225,7 +225,7 @@ func GetPoexpModByCadreID(cadreID string) ([]Posexp_mod, error) {
 }
 
 func Comfirmpoexp(cadreID string) error {
-	var mod Posexp_mod
+	var mod Posexp
 	// 查询待审核的岗位经历修改记录
 	result := db.Where("user_id = ? AND is_audited = false", cadreID).First(&mod)
 	if result.Error != nil {
@@ -259,7 +259,7 @@ func DeletePosexpModByID(id int) error {
 	if id <= 0 {
 		return errors.New("无效的岗位经历记录 ID")
 	}
-	result := db.Where("id = ?", id).Delete(&Posexp_mod{})
+	result := db.Where("id = ?", id).Delete(&Posexp{})
 	if result.Error != nil {
 		return result.Error
 	}
@@ -281,15 +281,15 @@ func GetPositionHistoryModsByUserID(userID string, pageNum int, pageSize int) ([
 
 func GetPosExpTotalByPosID(posID int) (int64, error) {
 	var count int64
-	err := db.Model(&Posexp_mod{}).Where("pos_id = ?", posID).Count(&count).Error
+	err := db.Model(&Posexp{}).Where("pos_id = ?", posID).Count(&count).Error
 	if err != nil {
 		return 0, err
 	}
 	return count, nil
 }
 
-func GetPosExpByPosID(posID int) ([]Posexp_mod, error) {
-	var posExps []Posexp_mod
+func GetPosExpByPosID(posID int) ([]Posexp, error) {
+	var posExps []Posexp
 	err := db.Where("pos_id= ?", posID).Find(&posExps).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err

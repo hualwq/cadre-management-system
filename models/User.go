@@ -8,10 +8,12 @@ import (
 )
 
 type User struct {
-	UserID   string `gorm:"primaryKey;type:varchar(50);column:user_id" json:"id"`
+	UserID   string `gorm:"primaryKey;size:50" json:"user_id"`
 	Password string `gorm:"type:varchar(255);not null" json:"password"`
 	Name     string `gorm:"type:varchar(50);not null" json:"name"`
-	Role     string `gorm:"type:ENUM('admin','cadre','sysadmin');default:'cadre';not null" json:"role"`
+
+	Roles       []UserRole   `gorm:"foreignKey:UserID;references:UserID" json:"roles"`
+	Departments []Department `gorm:"many2many:user_departments;" json:"departments"`
 }
 
 func (User) TableName() string {

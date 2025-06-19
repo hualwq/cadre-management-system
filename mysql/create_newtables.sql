@@ -1,139 +1,177 @@
--- 创建数据库 cadm1
+-- 创建数据库
 CREATE DATABASE IF NOT EXISTS cadm1;
 USE cadm1;
 
--- 创建干部信息表
-CREATE TABLE cadm_cadreinfo (
-  `user_id` varchar(50) NOT NULL COMMENT '干部ID',
-  `name` varchar(50) NOT NULL COMMENT '姓名',
-  `gender` ENUM('男','女') NOT NULL COMMENT '性别',
-  `birth_date` varchar(50) NOT NULL COMMENT '出生日期',
-  `age` tinyint unsigned DEFAULT NULL COMMENT '年龄',
-  `ethnic_group` varchar(20) NOT NULL COMMENT '民族',
-  `native_place` varchar(100) NOT NULL COMMENT '籍贯',
-  `birth_place` varchar(100) DEFAULT NULL COMMENT '出生地',
-  `political_status` ENUM('中共党员','中共预备党员','共青团员') DEFAULT NULL COMMENT '政治面貌',
-  `work_start_date` varchar(50) NOT NULL COMMENT '参加工作时间',
-  `health_status` varchar(20) DEFAULT NULL COMMENT '健康状况',
-  `professional_title` varchar(100) DEFAULT NULL COMMENT '专业技术职务',
-  `specialty` varchar(200) DEFAULT NULL COMMENT '特长',
-  `phone` varchar(20) NOT NULL COMMENT '联系电话',
-  `current_position` varchar(200) NOT NULL COMMENT '现任职务',
-  `resume` text DEFAULT NULL COMMENT '简历',
-  `awards_and_punishments` text DEFAULT NULL COMMENT '奖惩情况',
-  `annual_assessment` text DEFAULT NULL COMMENT '年度考核情况',
-  `email` varchar(50) DEFAULT NULL COMMENT '电子邮箱',
-  `filled_by` varchar(50) DEFAULT NULL COMMENT '填表人',
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `full_time_education_degree` varchar(50) DEFAULT NULL COMMENT '全日制教育学历',
-  `full_time_education_school` varchar(200) DEFAULT NULL COMMENT '全日制教育毕业院校',
-  `on_the_job_education_degree` varchar(50) DEFAULT NULL COMMENT '在职教育学历',
-  `on_the_job_education_school` varchar(200) DEFAULT NULL COMMENT '在职教育毕业院校',
-  `reporting_unit` varchar(200) DEFAULT NULL COMMENT '呈报单位',
-  `approval_authority` text DEFAULT NULL COMMENT '审批机关',
-  `administrative_appointment` text DEFAULT NULL COMMENT '行政职务任命',
-  `photourl` VARCHAR(100) DEFAULT NULL COMMENT '照片URL',
-  PRIMARY KEY (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='干部信息表';
+-- ========================
+-- 1. 学院表
+-- ========================
+CREATE TABLE cadm_departments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(100) NOT NULL UNIQUE COMMENT '学院名称',
+  description TEXT COMMENT '学院描述'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='学院表';
 
--- 创建考核表
-CREATE TABLE cadm_assessments (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-  `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  `deleted_at` datetime DEFAULT NULL COMMENT '删除时间',
-  `name` varchar(50) NOT NULL COMMENT '姓名',
-  `user_id` varchar(20) DEFAULT NULL COMMENT '学(工)号',
-  `phone` varchar(20) DEFAULT NULL COMMENT '手机号码',
-  `email` varchar(100) DEFAULT NULL COMMENT '电子邮箱',
-  `department` varchar(100) NOT NULL COMMENT '院系',
-  `category` varchar(20) NOT NULL COMMENT '类别(专职团干部/兼职团干部/教师/学生)',
-  `assess_dept` varchar(100) NOT NULL COMMENT '考核部门(多选)',
-  `year` int NOT NULL COMMENT '考核年度',
-  `work_summary` text NOT NULL COMMENT '工作说明(1000字以内)',
-  `grade` varchar(10) NOT NULL COMMENT '考核等级(优秀/合格/不合格)',
-  PRIMARY KEY (`id`),
-  INDEX `idx_user_id` (`user_id`),
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='考核表';
-
--- 创建用户表
+-- ========================
+-- 2. 用户表
+-- ========================
 CREATE TABLE cadm_users (
-  `user_id` varchar(50) NOT NULL COMMENT '用户ID',
-  `password` varchar(255) NOT NULL COMMENT '密码(加密存储)',
-  `name` varchar(50) NOT NULL COMMENT '姓名',
-  `role` ENUM('admin','cadre','sysadmin') NOT NULL DEFAULT 'cadre' COMMENT '角色',
-  PRIMARY KEY (`user_id`),
+  user_id varchar(50) NOT NULL COMMENT '用户ID',
+  password varchar(255) NOT NULL COMMENT '密码(加密存储)',
+  name varchar(50) NOT NULL COMMENT '姓名',
+  PRIMARY KEY (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
--- 创建角色表
-CREATE TABLE cadm_roles (
-  `name` varchar(255) NOT NULL COMMENT '角色名称',
-  `description` text DEFAULT NULL COMMENT '角色描述',
-  PRIMARY KEY (`name`),
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色表';
+-- 用户角色表（多角色支持）
+CREATE TABLE cadm_user_roles (
+  user_id VARCHAR(50) NOT NULL,
+  role VARCHAR(50) NOT NULL COMMENT '角色（system_admin, school_admin, department_admin, cadre）',
+  PRIMARY KEY (user_id, role),
+  FOREIGN KEY (user_id) REFERENCES cadm_users(user_id)
+    ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户角色表';
 
--- 创建简历经历表
+-- 用户-学院 多对多关系
+CREATE TABLE cadm_user_departments (
+  user_id VARCHAR(50) NOT NULL,
+  department_id INT NOT NULL,
+  PRIMARY KEY (user_id, department_id),
+  FOREIGN KEY (user_id) REFERENCES cadm_users(user_id)
+    ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (department_id) REFERENCES cadm_departments(id)
+    ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户-学院绑定关系';
+
+-- ========================
+-- 3. 干部信息表
+-- ========================
+CREATE TABLE cadm_cadreinfo (
+  user_id varchar(50) NOT NULL COMMENT '干部ID',
+  name varchar(50) NOT NULL COMMENT '姓名',
+  gender ENUM('男','女') NOT NULL COMMENT '性别',
+  birth_date varchar(50) NOT NULL COMMENT '出生日期',
+  age tinyint unsigned DEFAULT NULL COMMENT '年龄',
+  ethnic_group varchar(20) NOT NULL COMMENT '民族',
+  native_place varchar(100) NOT NULL COMMENT '籍贯',
+  birth_place varchar(100) DEFAULT NULL COMMENT '出生地',
+  political_status ENUM('中共党员','中共预备党员','共青团员') DEFAULT NULL COMMENT '政治面貌',
+  work_start_date varchar(50) NOT NULL COMMENT '参加工作时间',
+  health_status varchar(20) DEFAULT NULL COMMENT '健康状况',
+  professional_title varchar(100) DEFAULT NULL COMMENT '专业技术职务',
+  specialty varchar(200) DEFAULT NULL COMMENT '特长',
+  phone varchar(20) NOT NULL COMMENT '联系电话',
+  current_position varchar(200) NOT NULL COMMENT '现任职务',
+  resume text DEFAULT NULL COMMENT '简历',
+  awards_and_punishments text DEFAULT NULL COMMENT '奖惩情况',
+  annual_assessment text DEFAULT NULL COMMENT '年度考核情况',
+  email varchar(50) DEFAULT NULL COMMENT '电子邮箱',
+  filled_by varchar(50) DEFAULT NULL COMMENT '填表人',
+  created_at datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  deleted_at datetime DEFAULT NULL COMMENT '删除时间',
+  full_time_education_degree varchar(50) DEFAULT NULL COMMENT '全日制教育学历',
+  full_time_education_school varchar(200) DEFAULT NULL COMMENT '全日制教育毕业院校',
+  on_the_job_education_degree varchar(50) DEFAULT NULL COMMENT '在职教育学历',
+  on_the_job_education_school varchar(200) DEFAULT NULL COMMENT '在职教育毕业院校',
+  reporting_unit varchar(200) DEFAULT NULL COMMENT '呈报单位',
+  approval_authority text DEFAULT NULL COMMENT '审批机关',
+  administrative_appointment text DEFAULT NULL COMMENT '行政职务任命',
+  photourl VARCHAR(100) DEFAULT NULL COMMENT '照片URL',
+  department_id INT DEFAULT NULL COMMENT '所属学院ID',
+  PRIMARY KEY (user_id),
+  FOREIGN KEY (department_id) REFERENCES cadm_departments(id)
+    ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='干部信息表';
+
+-- ========================
+-- 4. 考核表
+-- ========================
+CREATE TABLE cadm_assessments (
+  id bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  created_at datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  updated_at datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  deleted_at datetime DEFAULT NULL COMMENT '删除时间',
+  name varchar(50) NOT NULL COMMENT '姓名',
+  user_id varchar(20) DEFAULT NULL COMMENT '学(工)号',
+  phone varchar(20) DEFAULT NULL COMMENT '手机号码',
+  email varchar(100) DEFAULT NULL COMMENT '电子邮箱',
+  department varchar(100) NOT NULL COMMENT '院系',
+  category varchar(20) NOT NULL COMMENT '类别(专职团干部/兼职团干部/教师/学生)',
+  assess_dept varchar(100) NOT NULL COMMENT '考核部门(多选)',
+  year int NOT NULL COMMENT '考核年度',
+  work_summary text NOT NULL COMMENT '工作说明(1000字以内)',
+  grade varchar(10) NOT NULL COMMENT '考核等级(优秀/合格/不合格)',
+  PRIMARY KEY (id),
+  INDEX idx_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='考核表';
+
+-- ========================
+-- 5. 简历经历表
+-- ========================
 CREATE TABLE cadm_resume_entries (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-  `user_id` varchar(255) NOT NULL COMMENT '关联用户ID',
-  `start_date` varchar(50) NOT NULL COMMENT '开始日期(格式:2007.09)',
-  `end_date` varchar(50) DEFAULT NULL COMMENT '结束日期(格式:2011.07或NULL表示至今)',
-  `organization` varchar(255) NOT NULL COMMENT '工作单位/学校',
-  `department` varchar(100) DEFAULT NULL COMMENT '学院/部门',
-  `position` varchar(100) DEFAULT NULL COMMENT '职务/身份',
-  PRIMARY KEY (`id`),
-  INDEX `idx_user_id` (`user_id`),
-  INDEX `idx_organization` (`organization`),
-  INDEX `idx_department` (`department`),
-  CONSTRAINT `fk_resume_entry_user` 
-    FOREIGN KEY (`user_id`) 
-    REFERENCES `cadm_cadreinfo` (`user_id`) 
-    ON DELETE CASCADE 
-    ON UPDATE CASCADE
+  id bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  user_id varchar(50) NOT NULL COMMENT '关联用户ID',
+  start_date varchar(50) NOT NULL COMMENT '开始日期(格式:2007.09)',
+  end_date varchar(50) DEFAULT NULL COMMENT '结束日期(格式:2011.07或NULL表示至今)',
+  organization varchar(255) NOT NULL COMMENT '工作单位/学校',
+  department varchar(100) DEFAULT NULL COMMENT '学院/部门',
+  position varchar(100) DEFAULT NULL COMMENT '职务/身份',
+  PRIMARY KEY (id),
+  INDEX idx_user_id (user_id),
+  INDEX idx_organization (organization),
+  INDEX idx_department (department),
+  CONSTRAINT fk_resume_entry_user 
+    FOREIGN KEY (user_id) REFERENCES cadm_cadreinfo(user_id)
+    ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='简历经历表';
 
--- 创建家庭成员表
+-- ========================
+-- 6. 家庭成员表
+-- ========================
 CREATE TABLE cadm_family_members (
-    `id` INT PRIMARY KEY AUTO_INCREMENT,
-    `user_id` varchar(50) NOT NULL,
-    `relation` VARCHAR(20) NOT NULL,
-    `name` VARCHAR(50) NOT NULL,
-    `birth_date` VARCHAR(50),
-    `political_status` VARCHAR(50),
-    `work_unit` VARCHAR(200),
-    FOREIGN KEY (`user_id`) REFERENCES cadm_cadreinfo(`user_id`),
-    INDEX `idx_user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  user_id varchar(50) NOT NULL,
+  relation VARCHAR(20) NOT NULL,
+  name VARCHAR(50) NOT NULL,
+  birth_date VARCHAR(50),
+  political_status VARCHAR(50),
+  work_unit VARCHAR(200),
+  FOREIGN KEY (user_id) REFERENCES cadm_cadreinfo(user_id),
+  INDEX idx_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='家庭成员表';
 
--- 创建岗位经历表
-CREATE TABLE cadm_posexp (
-  `id` int unsigned NOT NULL AUTO_INCREMENT,
-  `user_id` varchar(50) NOT NULL,
-  `posyear` varchar(20) NOT NULL,
-  `department` varchar(100) NOT NULL,
-  `pos` varchar(50) NOT NULL,
-  `pos_id` INT,
-  PRIMARY KEY (`id`),
-  FOREIGN KEY (`user_id`) REFERENCES cadm_cadreinfo(`user_id`),
-  FOREIGN KEY (`pos_id`) REFERENCES cadm_position_histories(`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- 创建岗位历史表
+-- ========================
+-- 7. 岗位历史表
+-- ========================
 CREATE TABLE cadm_position_histories (
-    `id` INT AUTO_INCREMENT PRIMARY KEY,
-    `user_id` varchar(50) NOT NULL,
-    `name` VARCHAR(100) NOT NULL,
-    `phone_number` VARCHAR(20),
-    `email` VARCHAR(100),
-    `department` VARCHAR(100) NOT NULL,
-    `category` VARCHAR(50) NOT NULL,
-    `office` VARCHAR(100) NOT NULL,
-    `academic_year` VARCHAR(50) NOT NULL,
-    `positions` VARCHAR(200),
-    `applied_at_year` INT UNSIGNED,
-    `applied_at_month` INT UNSIGNED,
-    `applied_at_day` INT UNSIGNED,
-    FOREIGN KEY (`user_id`) REFERENCES cadm_cadreinfo(`user_id`),
-    INDEX `idx_user_id` (`user_id`),
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id varchar(50) NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  phone_number VARCHAR(20),
+  email VARCHAR(100),
+  department VARCHAR(100) NOT NULL,
+  category VARCHAR(50) NOT NULL,
+  office VARCHAR(100) NOT NULL,
+  academic_year VARCHAR(50) NOT NULL,
+  positions VARCHAR(200),
+  applied_at_year INT UNSIGNED,
+  applied_at_month INT UNSIGNED,
+  applied_at_day INT UNSIGNED,
+  FOREIGN KEY (user_id) REFERENCES cadm_cadreinfo(user_id),
+  INDEX idx_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='岗位历史表';
+
+-- ========================
+-- 8. 岗位经历表
+-- ========================
+CREATE TABLE cadm_posexp (
+  id int unsigned NOT NULL AUTO_INCREMENT,
+  user_id varchar(50) NOT NULL,
+  posyear varchar(20) NOT NULL,
+  department varchar(100) NOT NULL,
+  pos varchar(50) NOT NULL,
+  pos_id INT,
+  PRIMARY KEY (id),
+  FOREIGN KEY (user_id) REFERENCES cadm_cadreinfo(user_id),
+  FOREIGN KEY (pos_id) REFERENCES cadm_position_histories(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='岗位经历表';
+

@@ -4,7 +4,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type ResumeEntry_modifications struct {
+type ResumeEntry struct {
 	ID           int    `gorm:"primaryKey;autoIncrement" json:"id"`
 	CadreID      string `gorm:"column:user_id;not null" json:"user_id"`
 	StartDate    string `json:"start_date"`           // 格式：2007.09 或 2019.12
@@ -15,12 +15,12 @@ type ResumeEntry_modifications struct {
 	Audited      int    `gorm:"default:0;column:audit_status"`
 }
 
-func (ResumeEntry_modifications) TableName() string {
-	return "cadm_resume_entries_mod"
+func (ResumeEntry) TableName() string {
+	return "cadm_resume_entries"
 }
 
 func Add_resume_mod(data map[string]interface{}) error {
-	resumeEntry := ResumeEntry_modifications{
+	resumeEntry := ResumeEntry{
 		CadreID:      data["user_id"].(string),
 		StartDate:    data["start_date"].(string),
 		EndDate:      data["end_date"].(string),
@@ -43,7 +43,7 @@ func Add_resume_mod(data map[string]interface{}) error {
 }
 
 func ExistResumeEntryModificationByID(id int) (bool, error) {
-	var entry ResumeEntry_modifications
+	var entry ResumeEntry
 	err := db.Select("id").Where("id = ?  and is_audited = ?", id, 0).First(&entry).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return false, err
@@ -57,8 +57,8 @@ func ExistResumeEntryModificationByID(id int) (bool, error) {
 }
 
 // GetResumeEntryModificationByID 根据 ID 获取单个履历条目修改记录
-func GetResumeEntryModificationByID(id int) (*ResumeEntry_modifications, error) {
-	var entry ResumeEntry_modifications
+func GetResumeEntryModificationByID(id int) (*ResumeEntry, error) {
+	var entry ResumeEntry
 	err := db.Where("id = ?", id).First(&entry).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
@@ -68,8 +68,8 @@ func GetResumeEntryModificationByID(id int) (*ResumeEntry_modifications, error) 
 }
 
 // GetResumeEntryModificationsByCadreID 根据 CadreID 获取履历条目修改记录列表
-func GetResumeEntryModificationsByCadreID(cadreID string) ([]ResumeEntry_modifications, error) {
-	var entries []ResumeEntry_modifications
+func GetResumeEntryModificationsByCadreID(cadreID string) ([]ResumeEntry, error) {
+	var entries []ResumeEntry
 	err := db.Where("user_id = ?", cadreID).Find(&entries).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
@@ -79,7 +79,7 @@ func GetResumeEntryModificationsByCadreID(cadreID string) ([]ResumeEntry_modific
 
 // DeleteResumeEntryModificationByID 根据 ID 删除单个履历条目修改记录
 func DeleteResumeEntryModificationByID(id int) error {
-	if err := db.Where("id = ?", id).Delete(ResumeEntry_modifications{}).Error; err != nil {
+	if err := db.Where("id = ?", id).Delete(ResumeEntry{}).Error; err != nil {
 		return err
 	}
 
@@ -87,7 +87,7 @@ func DeleteResumeEntryModificationByID(id int) error {
 }
 
 func EditResumeEntryModification(id int, data map[string]interface{}) error {
-	var resumeEntry ResumeEntry_modifications
+	var resumeEntry ResumeEntry
 	result := db.Model(&resumeEntry).Where("id = ?", id).Updates(data)
 	if result.Error != nil {
 		return result.Error

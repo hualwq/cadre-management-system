@@ -12,6 +12,7 @@ import (
 )
 
 type Cadre struct {
+	gorm.Model
 	ID                        string `gorm:"primaryKey;type:varchar(50);column:user_id" json:"user_id"`
 	PhotoUrl                  string `gorm:"type:varchar(100); column:photourl" json:"photourl"`
 	Name                      string `gorm:"type:varchar(50); column:name" json:"name"`

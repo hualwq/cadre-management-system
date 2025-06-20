@@ -15,31 +15,15 @@ CREATE TABLE cadm_departments (
 -- 2. 用户表
 -- ========================
 CREATE TABLE cadm_users (
-  user_id varchar(50) NOT NULL COMMENT '用户ID',
-  password varchar(255) NOT NULL COMMENT '密码(加密存储)',
-  name varchar(50) NOT NULL COMMENT '姓名',
-  PRIMARY KEY (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
-
--- 用户角色表（多角色支持）
-CREATE TABLE cadm_user_roles (
-  user_id VARCHAR(50) NOT NULL,
-  role VARCHAR(50) NOT NULL COMMENT '角色（system_admin, school_admin, department_admin, cadre）',
-  PRIMARY KEY (user_id, role),
-  FOREIGN KEY (user_id) REFERENCES cadm_users(user_id)
-    ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户角色表';
-
--- 用户-学院 多对多关系
-CREATE TABLE cadm_user_departments (
-  user_id VARCHAR(50) NOT NULL,
-  department_id INT NOT NULL,
-  PRIMARY KEY (user_id, department_id),
-  FOREIGN KEY (user_id) REFERENCES cadm_users(user_id)
-    ON DELETE CASCADE ON UPDATE CASCADE,
+  user_id VARCHAR(50) NOT NULL COMMENT '用户ID',
+  password VARCHAR(255) NOT NULL COMMENT '密码(加密存储)',
+  name VARCHAR(50) NOT NULL COMMENT '姓名',
+  role ENUM('school_admin', 'department_admin', 'cadre') NOT NULL COMMENT '用户角色',
+  department_id INT DEFAULT NULL COMMENT '所属学院',
+  PRIMARY KEY (user_id),
   FOREIGN KEY (department_id) REFERENCES cadm_departments(id)
-    ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户-学院绑定关系';
+    ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
 -- ========================
 -- 3. 干部信息表
@@ -180,4 +164,3 @@ CREATE TABLE cadm_posexp (
   FOREIGN KEY (user_id) REFERENCES cadm_cadreinfo(user_id),
   FOREIGN KEY (pos_id) REFERENCES cadm_position_histories(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='岗位经历表';
-

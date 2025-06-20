@@ -15,65 +15,6 @@ func InitDepartmentService() {
 	deptService = &Department_service.DepartmentService{DB: models.GetDB()}
 }
 
-// 新增院系
-func CreateDepartment(c *gin.Context) {
-	type Req struct {
-		Name        string `json:"name" binding:"required"`
-		Description string `json:"description"`
-	}
-	var req Req
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	if err := deptService.CreateDepartment(req.Name, req.Description); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"msg": "success"})
-}
-
-// 删除院系
-func DeleteDepartment(c *gin.Context) {
-	id := c.Param("id")
-	var deptID uint
-	_, err := fmt.Sscanf(id, "%d", &deptID)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
-		return
-	}
-	if err := deptService.DeleteDepartment(deptID); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"msg": "success"})
-}
-
-// 修改院系
-func UpdateDepartment(c *gin.Context) {
-	type Req struct {
-		Name        string `json:"name"`
-		Description string `json:"description"`
-	}
-	id := c.Param("id")
-	var deptID uint
-	_, err := fmt.Sscanf(id, "%d", &deptID)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
-		return
-	}
-	var req Req
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	if err := deptService.UpdateDepartment(deptID, req.Name, req.Description); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"msg": "success"})
-}
-
 // 查询所有院系
 func ListDepartments(c *gin.Context) {
 	depts, err := deptService.ListDepartments()

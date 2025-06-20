@@ -18,7 +18,7 @@ const (
 type Claims struct {
 	UserID   string `json:"user_id"`
 	Password string `json:"password"`
-	Role     string `json:"role"` // 添加角色字段
+	// Role     string `json:"role"`
 	jwt.StandardClaims
 }
 
@@ -33,14 +33,13 @@ type RefreshClaims struct {
 	jwt.StandardClaims
 }
 
-func GenerateToken(userid, password, role string) (string, error) {
+func GenerateToken(userid, password string) (string, error) {
 	nowTime := time.Now()
 	expireTime := nowTime.Add(time.Duration(setting.AppSetting.JwtExptime) * time.Hour)
 
 	claims := Claims{
 		userid,
 		EncodeMD5(password),
-		role,
 		jwt.StandardClaims{
 			ExpiresAt: expireTime.Unix(),
 			Issuer:    setting.AppSetting.JwtIssur,
@@ -74,7 +73,7 @@ func GenerateAccessToken(userid, role string) (string, error) {
 
 	claims := Claims{
 		UserID: userid,
-		Role:   role,
+		// Role:   role,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: expireTime.Unix(),
 			Issuer:    setting.AppSetting.JwtIssur,

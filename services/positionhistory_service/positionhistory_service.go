@@ -26,7 +26,7 @@ type Posexp struct {
 	Posyear    string `json:"year"`
 	Department string `json:"department"`
 	Pos        string `json:"position"`
-	PosID      int
+	PosID      int    `json:"posid"`
 
 	ID       int
 	PageNum  int
@@ -78,6 +78,7 @@ func (p *Posexp) Addyearposition() error {
 		"year":       p.Posyear,
 		"department": p.Department,
 		"position":   p.Pos,
+		"posid":      p.PosID,
 	}
 
 	if err := models.Addyearpositon(Pos); err != nil {

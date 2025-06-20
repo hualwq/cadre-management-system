@@ -1,10 +1,12 @@
 package v1
 
 import (
+	"cadre-management/models"
 	"cadre-management/pkg/app"
 	"cadre-management/pkg/e"
 	"cadre-management/services/Sys_admin"
 	"net/http"
+	"strconv"
 
 	"github.com/unknwon/com"
 
@@ -87,5 +89,104 @@ func ChangeUserRole(c *gin.Context) {
 	// 响应成功
 	appG.Response(http.StatusOK, e.SUCCESS, gin.H{
 		"message": "用户角色更改成功",
+	})
+}
+
+// CreateDepartment 创建院系
+func CreateDepartment(c *gin.Context) {
+	appG := app.Gin{C: c}
+
+	var department models.Department
+	if err := c.ShouldBindJSON(&department); err != nil {
+		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
+		return
+	}
+
+	if err := models.CreateDepartment(&department); err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, gin.H{
+		"message":    "院系创建成功",
+		"department": department,
+	})
+}
+
+// UpdateDepartment 更新院系
+func UpdateDepartment(c *gin.Context) {
+	appG := app.Gin{C: c}
+
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
+		return
+	}
+
+	var department models.Department
+	if err := c.ShouldBindJSON(&department); err != nil {
+		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
+		return
+	}
+
+	if err := models.UpdateDepartment(uint(id), &department); err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, gin.H{
+		"message": "院系更新成功",
+	})
+}
+
+// DeleteDepartment 删除院系
+func DeleteDepartment(c *gin.Context) {
+	appG := app.Gin{C: c}
+
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
+		return
+	}
+
+	if err := models.DeleteDepartment(uint(id)); err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, gin.H{
+		"message": "院系删除成功",
+	})
+}
+
+// GetDepartmentByID 根据ID获取院系
+func GetDepartmentByID(c *gin.Context) {
+	appG := app.Gin{C: c}
+
+	idStr := c.Param("id")
+	id, err := strconv.ParseUint(idStr, 10, 32)
+	if err != nil {
+		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
+		return
+	}
+
+	department, err := models.GetDepartmentByID(uint(id))
+	if err != nil {
+		appG.Response(http.StatusNotFound, e.ERROR, gin.H{
+			"error": "院系不存在",
+		})
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, gin.H{
+		"department": department,
 	})
 }

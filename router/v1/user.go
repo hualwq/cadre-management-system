@@ -1,9 +1,9 @@
 package v1
 
 import (
+	"cadre-management/models"
 	"cadre-management/pkg/app"
 	"cadre-management/pkg/e"
-	"cadre-management/pkg/utils"
 	"cadre-management/services/User_service"
 	"net/http"
 
@@ -38,14 +38,16 @@ func Login(c *gin.Context) {
 	}
 
 	userService := User_service.User{}
-	tokens, err := userService.Login(loginForm.UserID, loginForm.Password)
+	tokens, role, err := userService.Login(loginForm.UserID, loginForm.Password)
 	if err != nil {
 		appG.Response(http.StatusUnauthorized, e.ERROR_AUTH, nil)
 		return
 	}
+
 	appG.Response(http.StatusOK, e.SUCCESS, gin.H{
 		"access_token":  tokens.AccessToken,
 		"refresh_token": tokens.RefreshToken,
+		"role":          role,
 		"user":          gin.H{"user_id": loginForm.UserID},
 	})
 }
@@ -54,9 +56,10 @@ func Register(c *gin.Context) {
 	appG := app.Gin{C: c}
 
 	var registerForm struct {
-		UserID   string `json:"id" binding:"required"`
-		Name     string `json:"name" binding:"required"`
-		Password string `json:"password" binding:"required"`
+		UserID       string `json:"id" binding:"required"`
+		Name         string `json:"name" binding:"required"`
+		Password     string `json:"password" binding:"required"`
+		DepartmentID uint   `json:"department_id" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&registerForm); err != nil {
@@ -65,9 +68,10 @@ func Register(c *gin.Context) {
 	}
 
 	userService := User_service.User{
-		UserID:   registerForm.UserID,
-		Name:     registerForm.Name,
-		Password: registerForm.Password,
+		UserID:       registerForm.UserID,
+		Name:         registerForm.Name,
+		Password:     registerForm.Password,
+		DepartmentID: registerForm.DepartmentID,
 	}
 
 	if err := userService.RegistUser(); err != nil {
@@ -77,16 +81,17 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	tokens, _ := userService.Login(registerForm.UserID, registerForm.Password)
+	tokens, role, _ := userService.Login(registerForm.UserID, registerForm.Password)
 	appG.Response(http.StatusOK, e.SUCCESS, gin.H{
 		"message": "注册成功",
 		"user": gin.H{
-			"id":   registerForm.UserID,
-			"name": registerForm.Name,
-			"role": "cadre",
+			"id":            registerForm.UserID,
+			"name":          registerForm.Name,
+			"department_id": registerForm.DepartmentID,
 		},
 		"access_token":  tokens.AccessToken,
 		"refresh_token": tokens.RefreshToken,
+		"role":          role,
 	})
 }
 
@@ -94,21 +99,11 @@ func GetUserID(c *gin.Context) {
 	appG := app.Gin{C: c}
 
 	// 从上下文获取 claims
-	claims, exists := c.Get("claims")
+	userID, exists := c.Get("user_id")
 	if !exists {
 		appG.Response(http.StatusUnauthorized, e.ERROR_USER_CHECK_TOKEN_FAIL, nil)
 		return
 	}
-
-	// 断言 claims 类型
-	jwtClaims, ok := claims.(*utils.Claims)
-	if !ok {
-		appG.Response(http.StatusUnauthorized, e.ERROR_USER_CHECK_TOKEN_FAIL, nil)
-		return
-	}
-
-	// 获取 user_id
-	userID := jwtClaims.UserID
 
 	// 返回响应
 	appG.Response(http.StatusOK, e.SUCCESS, gin.H{
@@ -116,28 +111,42 @@ func GetUserID(c *gin.Context) {
 	})
 }
 
-func GetUserRole(c *gin.Context) {
+func RefreshToken(c *gin.Context) {
 	appG := app.Gin{C: c}
 
-	// 从上下文获取 claims
-	claims, exists := c.Get("claims")
-	if !exists {
-		appG.Response(http.StatusUnauthorized, e.ERROR_USER_CHECK_TOKEN_FAIL, nil)
+	var refreshForm struct {
+		RefreshToken string `json:"refresh_token" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&refreshForm); err != nil {
+		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
 		return
 	}
 
-	// 断言 claims 类型
-	jwtClaims, ok := claims.(*utils.Claims)
-	if !ok {
-		appG.Response(http.StatusUnauthorized, e.ERROR_USER_CHECK_TOKEN_FAIL, nil)
+	userService := User_service.User{}
+	tokens, err := userService.RefreshToken(refreshForm.RefreshToken)
+	if err != nil {
+		appG.Response(http.StatusUnauthorized, e.ERROR_AUTH, nil)
 		return
 	}
 
-	// 获取 role
-	role := jwtClaims.Role
-
-	// 返回响应
 	appG.Response(http.StatusOK, e.SUCCESS, gin.H{
-		"role": role,
+		"access_token":  tokens.AccessToken,
+		"refresh_token": tokens.RefreshToken,
+	})
+}
+
+func GetDepartments(c *gin.Context) {
+	appG := app.Gin{C: c}
+
+	departments, err := models.GetAllDepartments()
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	appG.Response(http.StatusOK, e.SUCCESS, gin.H{
+		"departments": departments,
 	})
 }

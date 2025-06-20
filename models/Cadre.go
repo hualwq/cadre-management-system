@@ -12,7 +12,6 @@ import (
 )
 
 type Cadre struct {
-	gorm.Model
 	ID                        string `gorm:"primaryKey;type:varchar(50);column:user_id" json:"user_id"`
 	PhotoUrl                  string `gorm:"type:varchar(100); column:photourl" json:"photourl"`
 	Name                      string `gorm:"type:varchar(50); column:name" json:"name"`
@@ -44,7 +43,7 @@ type Cadre struct {
 }
 
 func (Cadre) TableName() string {
-	return "cadm_cadreinfo_mod"
+	return "cadm_cadreinfo"
 }
 
 func GetCadre(cadreID string) (*Cadre, error) {

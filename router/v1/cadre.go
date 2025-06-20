@@ -106,6 +106,7 @@ type PosexpForm struct {
 	Posyear    string `json:"year"`
 	Department string `json:"department"`
 	Pos        string `json:"position"`
+	Posid      int    `json:"posid"`
 }
 
 type ResumeEntryForm struct {
@@ -368,6 +369,7 @@ func Addyearposition(c *gin.Context) {
 		Posyear:    form.Posyear,
 		Department: form.Department,
 		Pos:        form.Pos,
+		PosID:      form.Posid,
 	}
 
 	// 3. 调用添加逻辑

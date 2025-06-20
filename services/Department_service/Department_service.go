@@ -38,30 +38,24 @@ func (s *DepartmentService) ListDepartments() ([]models.Department, error) {
 
 // 设置用户为院系管理员
 func (s *DepartmentService) SetDepartmentAdmin(userID string, departmentID uint) error {
-	// 1. 绑定用户和院系
-	ud := models.UserDepartment{UserID: userID, DepartmentID: departmentID}
-	err := s.DB.FirstOrCreate(&ud, ud).Error
+	// 1. 更新用户的院系ID
+	err := s.DB.Model(&models.User{}).Where("user_id = ?", userID).Update("department_id", departmentID).Error
 	if err != nil {
 		return err
 	}
 	// 2. 赋予用户department_admin角色
-	ur := models.UserRole{UserID: userID, Role: "department_admin"}
-	return s.DB.FirstOrCreate(&ur, ur).Error
+	return s.DB.Model(&models.User{}).Where("user_id = ?", userID).Update("role", "department_admin").Error
 }
 
 // 取消用户的院系管理员身份
 func (s *DepartmentService) UnsetDepartmentAdmin(userID string, departmentID uint) error {
-	// 1. 解绑用户和院系（可选，通常不解绑，只降级角色）
-	// 2. 移除department_admin角色
-	return s.DB.Delete(&models.UserRole{}, "user_id = ? AND role = ?", userID, "department_admin").Error
+	// 将用户角色降级为cadre
+	return s.DB.Model(&models.User{}).Where("user_id = ?", userID).Update("role", "cadre").Error
 }
 
 // 查询某院系的管理员用户
 func (s *DepartmentService) GetDepartmentAdmins(departmentID uint) ([]models.User, error) {
 	var users []models.User
-	err := s.DB.Joins("JOIN user_departments ON user_departments.user_id = users.user_id").
-		Joins("JOIN user_roles ON user_roles.user_id = users.user_id").
-		Where("user_departments.department_id = ? AND user_roles.role = ?", departmentID, "department_admin").
-		Find(&users).Error
+	err := s.DB.Where("department_id = ? AND role = ?", departmentID, "department_admin").Find(&users).Error
 	return users, err
 }

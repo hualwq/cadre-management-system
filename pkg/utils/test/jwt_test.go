@@ -11,10 +11,9 @@ func TestGenerateAndParseToken(t *testing.T) {
 	// 准备测试数据
 	userID := "111111111"
 	password := "123456"
-	role := "cadre"
 
 	// 生成 JWT
-	token, err := utils.GenerateToken(userID, password, role)
+	token, err := utils.GenerateToken(userID, password)
 	assert.NoError(t, err)
 
 	// 解析 JWT

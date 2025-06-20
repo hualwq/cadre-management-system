@@ -22,7 +22,6 @@ type Positionhistory struct {
 	Month        uint   `gorm:"column:applied_at_month;type:tinyint unsigned" json:"applied_at_month"`
 	Day          uint   `gorm:"column:applied_at_day;type:tinyint unsigned" json:"applied_at_day"`
 	IsAudited    int    `gorm:"default:0;column:is_audited" json:"is_audited"`
-	PosID        int    `gorm:"not null;column:pos_id" json:"pos_id"`
 }
 
 type Posexp struct {
@@ -31,6 +30,7 @@ type Posexp struct {
 	Posyear    string `gorm:"size:20" json:"year"`
 	Department string `gorm:"size:100" json:"department"`
 	Pos        string `gorm:"size:50" json:"position"`
+	PosID      int    `gorm:"not null;column:pos_id" json:"pos_id"`
 	IsAudited  bool   `gorm:"default:false;column:is_audited"`
 }
 
@@ -72,7 +72,7 @@ func AddPositionhistory(data map[string]interface{}) error {
 
 	// 检查是否存在相同 CadreID 和 AcademicYear 的记录
 	var existing Positionhistory
-	err := db.Where("user_id = ? AND academic_year = ?", cadreID, positionHistory.AcademicYear).First(&existing).Error
+	err := db.Where("user_id = ? AND academic_year = ?", cadreID, data["academic_year"].(string)).First(&existing).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return fmt.Errorf("failed to check existing position history: %v", err)
 	}
@@ -98,6 +98,7 @@ func Addyearpositon(data map[string]interface{}) error {
 		Posyear:    data["year"].(string),
 		Department: data["department"].(string),
 		Pos:        data["position"].(string),
+		PosID:      data["posid"].(int),
 	}
 
 	// 3. 数据库操作

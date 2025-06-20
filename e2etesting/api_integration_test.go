@@ -2,65 +2,74 @@ package e2e
 
 import (
 	"bytes"
-	"cadre-management/models"
-	"cadre-management/pkg/logging"
-	"cadre-management/pkg/setting"
-	"cadre-management/pkg/utils"
-	"cadre-management/router"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
+
+	"cadre-management/router"
 )
 
 var (
-	baseURL      = "http://localhost:8088"
 	testUser     = "cadre"
-	testPassword = "123456"
+	testPassword = "123"
+	server       *httptest.Server
 )
 
-func init() {
-	_, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-	if err := os.Chdir("../"); err != nil {
-		panic(err)
-	}
-	setting.Setup()
-	models.Setup()
-	logging.Setup()
-	utils.Setup()
+func setup() {
+	server = httptest.NewServer(router.InitRouter())
 }
 
-// 每次调用前都刷新token
+func teardown() {
+	server.Close()
+}
+
 func getFreshToken(t *testing.T) string {
-	loginBody := map[string]string{"id": "", "password": testPassword}
+	loginBody := map[string]string{"id": testUser, "password": testPassword}
 	body, _ := json.Marshal(loginBody)
-	resp, err := http.Post(baseURL+"/login", "application/json", bytes.NewBuffer(body))
+	resp, err := http.Post(server.URL+"/login", "application/json", bytes.NewBuffer(body))
 	if err != nil {
 		t.Fatalf("login failed: %v", err)
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
+
+	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("login status: %d", resp.StatusCode)
 	}
-	var result map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&result)
-	return result["access_token"].(string)
-}
 
-func TestAPIRegister(t *testing.T) string {
+	var response struct {
+		Code int                    `json:"code"`
+		Msg  string                 `json:"msg"`
+		Data map[string]interface{} `json:"data"`
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		t.Fatalf("decode response failed: %v", err)
+	}
+
+	if response.Code != 200 {
+		t.Fatalf("unexpected response code: %d, msg: %s", response.Code, response.Msg)
+	}
+
+	data, ok := response.Data["refresh_token"].(string)
+	if !ok {
+		t.Fatal("refresh_token not found or not a string")
+	}
+
+	return data
+}
+func TestAPIRegister(t *testing.T) {
 
 	r := router.InitRouter()
+	departmentID := 5
 
-	registerBody := map[string]string{
+	registerBody := map[string]interface{}{
 		// "id":       "test_cadre_" + strconv.FormatInt(time.Now().UnixNano(), 10),
-		"id":       testUser,
-		"password": "123",
-		"name":     "Test User",
+		"id":            "cadre1",
+		"password":      "123456",
+		"name":          "Test User1",
+		"department_id": departmentID,
 	}
 
 	// 3. 序列化请求体
@@ -93,9 +102,9 @@ func TestAPIRegister(t *testing.T) string {
 
 	// 8. 解析响应
 	var result struct {
-		AccessToken string `json:"access_token"`
-		Message     string `json:"message"`
-		Success     bool   `json:"success"`
+		AccessToken  string `json:"access_token"`
+		Message      string `json:"message"`
+		RefreshToken string `json:"refresh_token"`
 	}
 	if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
 		t.Fatalf("Failed to decode response: %v", err)
@@ -107,13 +116,15 @@ func TestAPIRegister(t *testing.T) string {
 	}
 
 	t.Logf("Successfully registered user %s", registerBody["id"])
-	return result.AccessToken
 }
 
-func TestAPIIntegration(t *testing.T) {
+func TestGetuserID(t *testing.T) {
+	setup()
+	defer teardown()
+
 	t.Run("GetUserID", func(t *testing.T) {
 		token := getFreshToken(t)
-		req, _ := http.NewRequest("GET", baseURL+"/cadre/getuserid", nil)
+		req, _ := http.NewRequest("GET", server.URL+"/cadre/getuserid", nil)
 		req.Header.Set("Authorization", "Bearer "+token)
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
@@ -124,24 +135,261 @@ func TestAPIIntegration(t *testing.T) {
 			t.Errorf("unexpected status: %d", resp.StatusCode)
 		}
 		body, _ := ioutil.ReadAll(resp.Body)
+		// t.Fatalf("GetUserID response: %s", string(body))
 		t.Logf("GetUserID response: %s", string(body))
 	})
+}
 
-	t.Run("GetUserRole", func(t *testing.T) {
+func TestPOSTCadre(t *testing.T) {
+	setup()
+	defer teardown()
+	t.Run("AddCadreInfo", func(t *testing.T) {
 		token := getFreshToken(t)
-		req, _ := http.NewRequest("GET", baseURL+"/getuserrole", nil)
+		body := `{
+		"user_id":                     "cadre",
+		"name":                        "张三",
+		"gender":                      "男",
+		"birth_date":                  "1989.2",
+		"ethnic_group":                "汉族",
+		"native_place":                "广东省",
+		"birth_place":                 "广东省",
+		"political_status":            "中共党员",
+		"work_start_date":             "2013.7",
+		"health_status":               "良好",
+		"professional_title":          "工程师",
+		"specialty":                   "软件开发",
+		"phone":                       "13800138000",
+		"current_position":            "软件研发部经理",
+		"awards_and_punishments":      "2018年获得公司优秀员工称号",
+		"annual_assessment":           "近三年考核结果均为优秀",
+		"email":                       "zhangsan@example.com",
+		"filled_by":                   "李四",
+		"full_time_education_degree":  "本科",
+		"full_time_education_school":  "XX大学计算机科学与技术专业",
+		"on_the_job_education_degree": "硕士",
+		"on_the_job_education_school": "YY大学软件工程专业",
+		"reporting_unit":              "ZZ公司人力资源部",
+		"approval_authority":          "同意晋升",
+		"administrative_appointment":  "任命为软件研发部经理"
+		}`
+		req, _ := http.NewRequest("POST", server.URL+"/cadre/cadreinfo", bytes.NewBuffer([]byte(body)))
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("request failed: %v", err)
+		}
+		defer resp.Body.Close()
+		bodyBytes, _ := ioutil.ReadAll(resp.Body)
+		t.Logf("AddCadreInfo response: %s", string(bodyBytes))
+	})
+}
+
+func TestAPIPOSTAssessment(t *testing.T) {
+	setup()
+	defer teardown()
+
+	t.Run("AddAssessment", func(t *testing.T) {
+		token := getFreshToken(t)
+		body := `{"user_id":"cadre","department":"信息工程","category":"教师","assess_dept":"教务处","year":2023,"work_summary":"表现良好"}`
+		req, _ := http.NewRequest("POST", server.URL+"/cadre/assessment", bytes.NewBuffer([]byte(body)))
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("request failed: %v", err)
+		}
+		defer resp.Body.Close()
+		bodyBytes, _ := ioutil.ReadAll(resp.Body)
+		t.Logf("AddAssessment response: %s", string(bodyBytes))
+	})
+}
+
+func TestAPIPOSTPositionhistory(t *testing.T) {
+	setup()
+	defer teardown()
+
+	t.Run("AddPositionHistory", func(t *testing.T) {
+		token := getFreshToken(t)
+		body := `{"user_id":"cadre","department":"信息工程","category":"教师","office":"教务处","academic_year":"2023-2024","applied_at_year":2023,"applied_at_month":9,"applied_at_day":1}`
+		req, _ := http.NewRequest("POST", server.URL+"/cadre/positionhistory", bytes.NewBuffer([]byte(body)))
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("request failed: %v", err)
+		}
+		defer resp.Body.Close()
+		bodyBytes, _ := ioutil.ReadAll(resp.Body)
+		t.Logf("AddPositionHistory response: %s", string(bodyBytes))
+	})
+}
+
+func TestAPIPOSTYearPositionhistory(t *testing.T) {
+	setup()
+	defer teardown()
+
+	t.Run("AddYearPosition", func(t *testing.T) {
+		token := getFreshToken(t)
+		body := `{"user_id":"cadre","year":"2023","department":"信息工程","position":"班主任", "posid": 4}`
+		req, _ := http.NewRequest("POST", server.URL+"/cadre/yearposition", bytes.NewBuffer([]byte(body)))
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("request failed: %v", err)
+		}
+		defer resp.Body.Close()
+		bodyBytes, _ := ioutil.ReadAll(resp.Body)
+		t.Logf("AddYearPosition response: %s", string(bodyBytes))
+	})
+}
+
+func TestAPIPOSTResume(t *testing.T) {
+	setup()
+	defer teardown()
+
+	t.Run("AddResume", func(t *testing.T) {
+		token := getFreshToken(t)
+		body := `{"user_id":"cadre","start_date":"2010.09","end_date":"2014.07","organization":"清华大学","department":"计算机","position":"学生"}`
+		req, _ := http.NewRequest("POST", server.URL+"/cadre/resume", bytes.NewBuffer([]byte(body)))
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("request failed: %v", err)
+		}
+		defer resp.Body.Close()
+		bodyBytes, _ := ioutil.ReadAll(resp.Body)
+		t.Logf("AddResume response: %s", string(bodyBytes))
+	})
+}
+
+func TestAPIPOSTFamilymember(t *testing.T) {
+	setup()
+	defer teardown()
+
+	t.Run("AddFamilyMember", func(t *testing.T) {
+		token := getFreshToken(t)
+		body := `{"user_id":"cadre","relation":"父亲","name":"张父","birth_date":"1960-01-01","political_status":"群众","work_unit":"工厂"}`
+		req, _ := http.NewRequest("POST", server.URL+"/cadre/familymember", bytes.NewBuffer([]byte(body)))
+		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("request failed: %v", err)
+		}
+		defer resp.Body.Close()
+		bodyBytes, _ := ioutil.ReadAll(resp.Body)
+		t.Logf("AddFamilyMember response: %s", string(bodyBytes))
+	})
+}
+
+func TestAPIGetPositionhistoryBypage(t *testing.T) {
+	setup()
+	defer teardown()
+
+	t.Run("GetPositionHistoryModsByPage", func(t *testing.T) {
+		token := getFreshToken(t)
+		req, _ := http.NewRequest("GET", server.URL+"/cadre/getphmodbypage", nil)
 		req.Header.Set("Authorization", "Bearer "+token)
 		resp, err := http.DefaultClient.Do(req)
 		if err != nil {
 			t.Fatalf("request failed: %v", err)
 		}
 		defer resp.Body.Close()
-		if resp.StatusCode != 200 {
-			t.Errorf("unexpected status: %d", resp.StatusCode)
-		}
 		body, _ := ioutil.ReadAll(resp.Body)
-		t.Logf("GetUserRole response: %s", string(body))
+		t.Logf("GetPositionHistoryModsByPage response: %s", string(body))
+	})
+}
+
+func TestAPIV1Group(t *testing.T) {
+	setup()
+	defer teardown()
+
+	// GET /getasmodbypage
+	t.Run("GetAssessmentByPage", func(t *testing.T) {
+		token := getFreshToken(t)
+		req, _ := http.NewRequest("GET", server.URL+"/cadre/getasmodbypage", nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("request failed: %v", err)
+		}
+		defer resp.Body.Close()
+		body, _ := ioutil.ReadAll(resp.Body)
+		t.Logf("GetAssessmentByPage response: %s", string(body))
 	})
 
-	// 可继续添加更多接口测试，每次都用getFreshToken(t)获取新token
+	// GET /getposexpbyposid
+	t.Run("GetPosExpByPosID", func(t *testing.T) {
+		token := getFreshToken(t)
+		req, _ := http.NewRequest("GET", server.URL+"/cadre/getposexpbyposid", nil)
+		req.Header.Set("Authorization", "Bearer "+token)
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatalf("request failed: %v", err)
+		}
+		defer resp.Body.Close()
+		body, _ := ioutil.ReadAll(resp.Body)
+		t.Logf("GetPosExpByPosID response: %s", string(body))
+	})
+
+	// PUT/DELETE接口和其它GET接口可仿照上面写法继续补充
+}
+
+func TestAPILogin(t *testing.T) {
+
+	r := router.InitRouter()
+
+	registerBody := map[string]string{
+		// "id":       "test_cadre_" + strconv.FormatInt(time.Now().UnixNano(), 10),
+		"id":       "school_admin",
+		"password": "admin123",
+	}
+
+	// 3. 序列化请求体
+	body, err := json.Marshal(registerBody)
+	if err != nil {
+		t.Fatalf("Failed to marshal register body: %v", err)
+	}
+
+	// 4. 创建测试请求
+	req, err := http.NewRequest(
+		"POST",
+		"/login",
+		bytes.NewBuffer(body),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	// 5. 创建响应记录器
+	w := httptest.NewRecorder()
+
+	// 6. 执行请求
+	r.ServeHTTP(w, req)
+
+	// 7. 验证响应
+	if w.Code != http.StatusOK {
+		t.Fatalf("Expected status 200, got %d. Response: %s", w.Code, w.Body.String())
+	}
+
+	// 8. 解析响应
+	var result struct {
+		AccessToken  string `json:"access_token"`
+		RefreshToken string `json:"refresh_token"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &result); err != nil {
+		t.Fatalf("Failed to decode response: %v", err)
+	}
+
+	// 9. 验证token
+	if result.AccessToken == "" {
+		t.Fatal("Access token is empty in response")
+	}
+
+	t.Logf("Successfully registered user %s", registerBody["id"])
+
 }

@@ -2,17 +2,19 @@ package models
 
 import (
 	"errors"
+	"fmt"
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 type User struct {
-	UserID   string `gorm:"primaryKey;size:50" json:"user_id"`
-	Password string `gorm:"type:varchar(255);not null" json:"password"`
-	Name     string `gorm:"type:varchar(50);not null" json:"name"`
+	UserID       string `gorm:"primaryKey;size:50" json:"user_id"`
+	Password     string `gorm:"type:varchar(255);not null" json:"password"`
+	Name         string `gorm:"type:varchar(50);not null" json:"name"`
+	Role         string `gorm:"type:varchar(50);not null;default:'cadre'" json:"role"`
+	DepartmentID *uint  `gorm:"column:department_id" json:"department_id"`
 
-	Roles       []UserRole   `gorm:"foreignKey:UserID;references:UserID" json:"roles"`
 	Departments []Department `gorm:"many2many:user_departments;" json:"departments"`
 }
 
@@ -22,7 +24,7 @@ func (User) TableName() string {
 
 func ExistUser(userid, password string) (bool, error) {
 	var usr User
-	err := db.Select("id").Where(User{UserID: userid, Password: password}).First(&usr).Error
+	err := db.Where("user_id = ?", userid).First(&usr).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return false, err
 	}
@@ -40,8 +42,11 @@ func Authenticate(userid, password string) (*User, error) {
 		return nil, err
 	}
 
+	fmt.Println(user.Password)
+
 	// 比较用户输入的密码和数据库中存储的哈希密码
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+	fmt.Println(err)
 	if err != nil {
 		return nil, errors.New("用户名或密码错误")
 	}
@@ -92,16 +97,18 @@ func GetUserByPage(page, pageSize int) ([]User, error) {
 }
 
 func (u *User) HasPermission(resource, action string) bool {
-	var count int64
-	db.Model(u).
-		Joins("JOIN user_roles ON user_roles.user_id = users.id").
-		Joins("JOIN roles ON roles.id = user_roles.role_id").
-		Joins("JOIN role_permissions ON role_permissions.role_id = roles.id").
-		Joins("JOIN permissions ON permissions.id = role_permissions.permission_id").
-		Where("users.id = ? AND permissions.resource = ? AND permissions.action = ?",
-			u.UserID, resource, action).
-		Count(&count)
-	return count > 0
+	// 简化权限检查，基于用户角色
+	// 这里可以根据需要实现更复杂的权限逻辑
+	switch u.Role {
+	case "sysadmin":
+		return true // 系统管理员拥有所有权限
+	case "admin":
+		return resource != "system" // 管理员不能访问系统级资源
+	case "cadre":
+		return resource == "cadre" && (action == "read" || action == "write")
+	default:
+		return false
+	}
 }
 
 func RegisterUser(data map[string]interface{}) error {
@@ -128,14 +135,36 @@ func RegisterUser(data map[string]interface{}) error {
 		return errors.New("密码加密失败")
 	}
 
-	// 构建新用户
-	newUser := User{
-		UserID:   userID,
-		Name:     data["name"].(string),
-		Password: string(hashedPassword),
+	// 处理院系ID
+	departmentID, ok := data["department_id"].(uint)
+	if !ok || departmentID == 0 {
+		return errors.New("无效的院系ID")
 	}
 
-	return db.Create(&newUser).Error
+	// 验证院系是否存在
+	var department Department
+	if err := db.First(&department, departmentID).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("院系不存在")
+		}
+		return err
+	}
+
+	// 构建新用户
+	newUser := User{
+		UserID:       userID,
+		Name:         data["name"].(string),
+		Password:     string(hashedPassword),
+		Role:         "cadre", // 默认角色
+		DepartmentID: &departmentID,
+	}
+
+	// 创建用户
+	if err := db.Create(&newUser).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func GetUserByID(userID string) (*User, error) {

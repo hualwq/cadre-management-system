@@ -10,7 +10,6 @@ import (
 
 // Assessment 干部考核模型
 type Assessment struct {
-	gorm.Model
 	ID          int    `gorm:"primaryKey;autoIncrement" json:"id"`
 	Name        string `gorm:"type:varchar(50);not null;" json:"name"`
 	CadreID     string `gorm:"type:varchar(20);column:user_id" json:"user_id"`
@@ -26,7 +25,7 @@ type Assessment struct {
 }
 
 func (Assessment) TableName() string {
-	return "cadm_assessment"
+	return "cadm_assessments"
 }
 
 func GetAssessmentsMod(pageNum int, pageSize int, maps interface{}) ([]Assessment, error) {

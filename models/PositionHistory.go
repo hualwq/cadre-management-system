@@ -22,6 +22,7 @@ type Positionhistory struct {
 	Month        uint   `gorm:"column:applied_at_month;type:tinyint unsigned" json:"applied_at_month"`
 	Day          uint   `gorm:"column:applied_at_day;type:tinyint unsigned" json:"applied_at_day"`
 	IsAudited    int    `gorm:"default:0;column:is_audited" json:"is_audited"`
+	DepartmentID int    `gorm:"type:int;not null;" json:"department_id"`
 }
 
 type Posexp struct {
@@ -42,17 +43,17 @@ func (Posexp) TableName() string {
 	return "cadm_Posexp"
 }
 
-func AddPositionhistory(data map[string]interface{}) error {
+func AddPositionhistory(data map[string]interface{}) (int, error) {
 	// 从 data 中解析直接提供的字段
 	cadreID, ok := data["user_id"].(string)
 	if !ok {
-		return errors.New("invalid or missing cadre ID")
+		return -1, errors.New("invalid or missing cadre ID")
 	}
 
 	// 查询 cadre_info 表获取其他信息
 	var cadre Cadre
 	if err := db.Where("user_id = ?", cadreID).First(&cadre).Error; err != nil {
-		return fmt.Errorf("请先编辑基本信息或等管理员审核信息")
+		return -1, fmt.Errorf("请先编辑基本信息或等管理员审核信息")
 	}
 
 	// 创建 Positionhistory 对象
@@ -68,28 +69,29 @@ func AddPositionhistory(data map[string]interface{}) error {
 		Year:         data["applied_at_year"].(uint),
 		Month:        data["applied_at_month"].(uint),
 		Day:          data["applied_at_day"].(uint),
+		DepartmentID: data["department_id"].(int),
 	}
 
 	// 检查是否存在相同 CadreID 和 AcademicYear 的记录
 	var existing Positionhistory
 	err := db.Where("user_id = ? AND academic_year = ?", cadreID, data["academic_year"].(string)).First(&existing).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		return fmt.Errorf("failed to check existing position history: %v", err)
+		return -1, fmt.Errorf("failed to check existing position history: %v", err)
 	}
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		// 不存在旧记录，执行插入
 		if err := db.Create(&positionHistory).Error; err != nil {
-			return fmt.Errorf("failed to create position history: %v", err)
+			return -1, fmt.Errorf("failed to create position history: %v", err)
 		}
 	} else {
 		// 存在旧记录，更新
 		if err := db.Save(&positionHistory).Error; err != nil {
-			return fmt.Errorf("failed to update position history: %v", err)
+			return -1, fmt.Errorf("failed to update position history: %v", err)
 		}
 	}
 
-	return nil
+	return positionHistory.ID, nil
 }
 
 func Addyearpositon(data map[string]interface{}) error {
@@ -159,18 +161,18 @@ func DeletePositionHistoryByID(id int) error {
 	return nil
 }
 
-func ExistPositionHistoryByID(id int) (bool, error) {
+func ExistPositionHistoryByID(id int) (bool, int, error) {
 	var positionHistory Positionhistory
 	err := db.Select("id").Where("id = ?  and is_audited = ?", id, 0).First(&positionHistory).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
-		return false, err
+		return false, -1, err
 	}
 
 	if positionHistory.ID > 0 {
-		return true, nil
+		return true, -1, nil
 	}
 
-	return false, nil
+	return false, -1, nil
 }
 
 func ExistPosexpByID(id int) (bool, error) {

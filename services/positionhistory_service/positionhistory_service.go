@@ -15,6 +15,7 @@ type Positionhistory struct {
 	Day          uint   `json:"applied_at_day"`
 	Positions    string `json:"positions"`
 	Audited      int    `json:"is_audited"`
+	DepartmentID int    `json:"department_id"`
 
 	ID       int
 	PageNum  int
@@ -41,7 +42,7 @@ func (p *Posexp) ExistByID() (bool, error) {
 	return models.ExistPosexpByID(p.ID)
 }
 
-func (p *Positionhistory) AddPositionhistory() error {
+func (p *Positionhistory) AddPositionhistory() (int, error) {
 	positionHistory := map[string]interface{}{
 		"user_id":          p.CadreID,
 		"department":       p.Department,
@@ -51,13 +52,15 @@ func (p *Positionhistory) AddPositionhistory() error {
 		"applied_at_year":  p.Year,
 		"applied_at_month": p.Month,
 		"applied_at_day":   p.Day,
+		"department_id":    p.DepartmentID,
 	}
 
-	if err := models.AddPositionhistory(positionHistory); err != nil {
-		return err
+	id, err := models.AddPositionhistory(positionHistory)
+	if id == -1 || err != nil {
+		return -1, err
 	}
 
-	return nil
+	return id, nil
 }
 
 func (s *Posexp) GetAll() ([]models.Posexp, error) {
@@ -125,6 +128,9 @@ func (p *Positionhistory) getMaps() map[string]interface{} {
 	if p.Audited != 0 {
 		maps["is_audited"] = p.Audited
 	}
+	if p.DepartmentID != 0 {
+		maps["department_id"] = p.DepartmentID
+	}
 
 	return maps
 }
@@ -164,7 +170,7 @@ func (p *Positionhistory) EditPositionhistorymod() error {
 	return models.EditPositionHistoryMod(p.ID, data)
 }
 
-func (p *Positionhistory) ExistByID() (bool, error) {
+func (p *Positionhistory) ExistByID() (bool, int, error) {
 	return models.ExistPositionHistoryByID(p.ID)
 }
 

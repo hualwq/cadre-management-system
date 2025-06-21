@@ -14,10 +14,18 @@ type User struct {
 	DepartmentID uint   `json:"department_id"`
 }
 
-func (s *User) Login(userid, password string) (utils.TokenPair, string, error) {
+// LoginResult 登录结果结构体
+type LoginResult struct {
+	UserID       string `json:"user_id"`
+	Role         string `json:"role"`
+	Name         string `json:"name"`
+	DepartmentID uint   `json:"department_id"`
+}
+
+func (s *User) Login(userid, password string) (utils.TokenPair, *LoginResult, error) {
 	user, err := models.Authenticate(userid, password)
 	if err != nil {
-		return utils.TokenPair{}, "", err
+		return utils.TokenPair{}, nil, err
 	}
 
 	// 获取用户角色
@@ -25,10 +33,18 @@ func (s *User) Login(userid, password string) (utils.TokenPair, string, error) {
 
 	tokens, err := utils.GenerateTokenPair(user.UserID, role)
 	if err != nil {
-		return utils.TokenPair{}, "", err
+		return utils.TokenPair{}, nil, err
 	}
 
-	return tokens, role, nil
+	// 构建登录结果
+	loginResult := &LoginResult{
+		UserID:       user.UserID,
+		Role:         user.Role,
+		Name:         user.Name,
+		DepartmentID: *user.DepartmentID,
+	}
+
+	return tokens, loginResult, nil
 }
 
 func (s *User) RefreshToken(refreshToken string) (utils.TokenPair, error) {
@@ -58,4 +74,9 @@ func ParaseDepartmentName(departmentName string) (uint, error) {
 		return 0, err
 	}
 	return department.ID, nil
+}
+
+// GetUsersWithFilterService 分页和多条件筛选用户
+func (s *User) GetUsersWithFilter(page, pageSize int, userID, name, role string, departmentID uint) ([]models.User, int64, error) {
+	return models.GetUsersWithFilter(page, pageSize, userID, name, role, departmentID)
 }

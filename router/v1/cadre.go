@@ -82,12 +82,13 @@ type EditCadreInfoForm struct {
 }
 
 type AddAssessmentForm struct {
-	CadreID     string `json:"user_id"`
-	Department  string `json:"department"`
-	Category    string `json:"category"`
-	AssessDept  string `json:"assess_dept"`
-	Year        int    `json:"year"`
-	WorkSummary string `json:"work_summary"`
+	CadreID      string `json:"user_id"`
+	Department   string `json:"department"`
+	Category     string `json:"category"`
+	AssessDept   string `json:"assess_dept"`
+	Year         int    `json:"year"`
+	WorkSummary  string `json:"work_summary"`
+	DepartmentID int    `json:"department_id"`
 }
 
 type AddPositionHistoryForm struct {
@@ -99,6 +100,7 @@ type AddPositionHistoryForm struct {
 	Year         uint   `json:"applied_at_year"`
 	Month        uint   `json:"applied_at_month"`
 	Day          uint   `json:"applied_at_day"`
+	DepartmentID int    `json:"department_id"`
 }
 
 type PosexpForm struct {
@@ -299,12 +301,13 @@ func AddAssessment(c *gin.Context) {
 
 	// 构造服务层结构体
 	CadreService := Assessment_service.Assessment{
-		CadreID:     form.CadreID,
-		Department:  form.Department,
-		Category:    form.Category,
-		AssessDept:  form.AssessDept,
-		Year:        form.Year,
-		WorkSummary: form.WorkSummary,
+		UserID:       form.CadreID,
+		Department:   form.Department,
+		Category:     form.Category,
+		AssessDept:   form.AssessDept,
+		Year:         form.Year,
+		WorkSummary:  form.WorkSummary,
+		DepartmentID: form.DepartmentID,
 	}
 
 	// 调用添加逻辑
@@ -339,15 +342,17 @@ func AddPositionHistory(c *gin.Context) {
 		Year:         form.Year,
 		Month:        form.Month,
 		Day:          form.Day,
+		DepartmentID: form.DepartmentID,
 	}
 
-	// 调用添加逻辑
-	if err := PositionService.AddPositionhistory(); err != nil {
+	id, err := PositionService.AddPositionhistory()
+
+	if id == -1 || err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_ADD_POSITIONHISTORY_FAIL, nil)
 		return
 	}
 
-	appG.Response(http.StatusOK, e.SUCCESS, nil)
+	appG.Response(http.StatusOK, e.SUCCESS, gin.H{"id": id})
 }
 
 func Addyearposition(c *gin.Context) {
@@ -567,7 +572,7 @@ func EditPh(c *gin.Context) {
 		Day:          form.Day,
 	}
 
-	exists, err := positionhistoryservice.ExistByID()
+	exists, id, err := positionhistoryservice.ExistByID()
 	if err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_NOT_EXSIT_POSITIONHISTORY, nil)
 		return
@@ -582,8 +587,12 @@ func EditPh(c *gin.Context) {
 		return
 	}
 
-	appG.Response(http.StatusOK, e.SUCCESS, nil)
+	if id == -1 {
+		appG.Response(http.StatusInternalServerError, e.ERROR_EDIT_POSITIONHISTORY_FAIL, nil)
+		return
+	}
 
+	appG.Response(http.StatusOK, e.SUCCESS, gin.H{"id": id})
 }
 
 func Editfamilymember(c *gin.Context) {
@@ -643,7 +652,7 @@ func EditAssessment(c *gin.Context) {
 	assessmentService := Assessment_service.Assessment{
 		ID:          form.ID,
 		Name:        form.Name,
-		CadreID:     form.CadreID,
+		UserID:      form.CadreID,
 		Phone:       form.Phone,
 		Email:       form.Email,
 		Department:  form.Department,
@@ -821,7 +830,7 @@ func Deletephmod(c *gin.Context) {
 	positionhistoryservice := Positionhistory_service.Positionhistory{
 		ID: id,
 	}
-	exists, err := positionhistoryservice.ExistByID()
+	exists, _, err := positionhistoryservice.ExistByID()
 	if err != nil {
 		appG.Response(http.StatusInternalServerError, e.ERROR_DELETE_POSITIONHISTORY_FAIL, nil)
 		return
@@ -966,7 +975,7 @@ func GetAssessmentByPage(c *gin.Context) {
 	name := c.Query("name")
 	department := c.Query("department")
 	auditedStr := c.Query("audited")
-	audited := -1
+	audited := 0
 	if auditedStr != "" {
 		if val, err := strconv.Atoi(auditedStr); err == nil {
 			audited = val

@@ -10,18 +10,19 @@ import (
 
 // Assessment 干部考核模型
 type Assessment struct {
-	ID          int    `gorm:"primaryKey;autoIncrement" json:"id"`
-	Name        string `gorm:"type:varchar(50);not null;" json:"name"`
-	CadreID     string `gorm:"type:varchar(20);column:user_id" json:"user_id"`
-	Phone       string `gorm:"type:varchar(20);" json:"phone"`
-	Email       string `gorm:"type:varchar(100);" json:"email"`
-	Department  string `gorm:"type:varchar(100);not null;" json:"department"`
-	Category    string `gorm:"type:varchar(20);not null;" json:"category"`
-	AssessDept  string `gorm:"type:varchar(100);not null;" json:"assess_dept"`
-	Year        int    `gorm:"type:int;not null;" json:"year"`
-	WorkSummary string `gorm:"type:text;not null;" json:"work_summary"`
-	Grade       string `gorm:"type:varchar(10);not null;" json:"grade"`
-	IsAudited   int    `gorm:"default:0;column:is_audited" json:"is_audited"`
+	ID           int    `gorm:"primaryKey;autoIncrement" json:"id"`
+	Name         string `gorm:"type:varchar(50);not null;" json:"name"`
+	CadreID      string `gorm:"type:varchar(20);column:user_id" json:"user_id"`
+	Phone        string `gorm:"type:varchar(20);" json:"phone"`
+	Email        string `gorm:"type:varchar(100);" json:"email"`
+	Department   string `gorm:"type:varchar(100);not null;" json:"department"`
+	Category     string `gorm:"type:varchar(20);not null;" json:"category"`
+	AssessDept   string `gorm:"type:varchar(100);not null;" json:"assess_dept"`
+	Year         int    `gorm:"type:int;not null;" json:"year"`
+	WorkSummary  string `gorm:"type:text;not null;" json:"work_summary"`
+	Grade        string `gorm:"type:varchar(10);not null;" json:"grade"`
+	IsAudited    int    `gorm:"default:0;column:is_audited" json:"is_audited"`
+	DepartmentID int    `gorm:"type:int;not null;" json:"department_id"`
 }
 
 func (Assessment) TableName() string {
@@ -34,11 +35,15 @@ func GetAssessmentsMod(pageNum int, pageSize int, maps interface{}) ([]Assessmen
 		err         error
 	)
 
+	fmt.Println("maps", maps)
+
+	query := db.Where(maps)
+
 	if pageSize > 0 && pageNum > 0 {
-		err = db.Where(maps).Find(&assessments).Offset(pageNum).Limit(pageSize).Error
-	} else {
-		err = db.Where(maps).Find(&assessments).Error
+		query = query.Offset((pageNum - 1) * pageSize).Limit(pageSize)
 	}
+
+	err = query.Find(&assessments).Error
 
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
@@ -86,16 +91,17 @@ func AddAssessment(data map[string]interface{}) error {
 
 	// 6. 创建 Assessment 对象
 	assessment := Assessment{
-		Name:        cadre.Name,
-		CadreID:     userID,
-		Phone:       cadre.Phone,
-		Email:       cadre.Email,
-		Department:  data["department"].(string),
-		Category:    data["category"].(string),
-		AssessDept:  data["assess_dept"].(string),
-		Year:        year, // 使用处理后的年份
-		WorkSummary: data["work_summary"].(string),
-		Grade:       "待评定", // 默认值
+		Name:         cadre.Name,
+		CadreID:      userID,
+		Phone:        cadre.Phone,
+		Email:        cadre.Email,
+		Department:   data["department"].(string),
+		Category:     data["category"].(string),
+		AssessDept:   data["assess_dept"].(string),
+		Year:         year, // 使用处理后的年份
+		WorkSummary:  data["work_summary"].(string),
+		DepartmentID: data["department_id"].(int),
+		Grade:        "待评定", // 默认值
 	}
 
 	// 7. 检查是否已存在相同记录
@@ -122,7 +128,7 @@ func AddAssessment(data map[string]interface{}) error {
 
 func ExistAssesementByID(id int) (bool, error) {
 	var assesement Assessment
-	err := db.Select("id").Where("id = ? AND deleted_on = ? ", id, 0).First(&assesement).Error
+	err := db.Select("id").Where("id = ?", id).First(&assesement).Error
 	if err != nil && err != gorm.ErrRecordNotFound {
 		return false, err
 	}
@@ -172,6 +178,8 @@ func ComfirmAssessment(id int, grade string) error {
 			"is_audited": 1, // Using column name from struct tag
 		})
 
+	fmt.Println("ComfirmAssessment", id, grade)
+
 	if result.Error != nil {
 		return result.Error
 	}
@@ -193,6 +201,6 @@ func DeleteAssessmentByID(id int) error {
 
 func ExistAssessmentModByID(id int) (bool, error) {
 	var count int64
-	err := db.Model(&Cadre{}).Where("id = ?", id, 0).Count(&count).Error
+	err := db.Model(&Assessment{}).Where("id = ?", id).Count(&count).Error
 	return count > 0, err
 }

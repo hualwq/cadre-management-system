@@ -31,8 +31,8 @@ type ComfirmcadreForm struct {
 }
 
 type ComfirmAssessmentForm struct {
-	ID     int    `json:"id" binding:"required"`
-	Result string `json:"result" binding:"required"`
+	ID    int    `json:"id" binding:"required"`
+	Grade string `json:"grade" binding:"required"`
 }
 
 type ComfirmPositionhistoryForm struct {
@@ -70,7 +70,7 @@ func ConfirmAssessment(c *gin.Context) {
 	}
 
 	AssessmentService := Assessment_service.ComfirmAssessment{
-		Grade: form.Result,
+		Grade: form.Grade,
 		ID:    form.ID,
 	}
 
@@ -163,7 +163,7 @@ func GetCadreInfoModByPage(c *gin.Context) {
 	gender := c.Query("gender")
 	auditedStr := c.Query("audited")
 
-	audited := -1
+	audited := 0
 	if auditedStr != "" {
 		if val, err := strconv.Atoi(auditedStr); err == nil {
 			audited = val
@@ -200,17 +200,22 @@ func GetCadreInfoModByPage(c *gin.Context) {
 func GetAssessmentsMod(c *gin.Context) {
 	appG := app.Gin{C: c}
 	name := c.Query("name")
-	cadreID := c.Query("cadre_id")
+	cadreID := c.Query("user_id")
 	department := c.Query("department")
 	category := c.Query("category")
 	assessDept := c.Query("assess_dept")
 	yearStr := c.Query("year")
+	departmentIDStr := c.Query("department_id")
+	departmentID := 0
+	if departmentIDStr != "" {
+		departmentID = com.StrTo(departmentIDStr).MustInt()
+	}
 	year := 0
 	if yearStr != "" {
 		year = com.StrTo(yearStr).MustInt()
 	}
 	auditedStr := c.Query("audited")
-	audited := -1
+	audited := 0
 	if auditedStr != "" {
 		if val, err := strconv.Atoi(auditedStr); err == nil {
 			audited = val
@@ -218,15 +223,16 @@ func GetAssessmentsMod(c *gin.Context) {
 	}
 
 	assessmentService := Assessment_service.Assessment{
-		Name:       name,
-		CadreID:    cadreID,
-		Department: department,
-		Category:   category,
-		AssessDept: assessDept,
-		Year:       year,
-		Audited:    audited,
-		PageNum:    utils.GetPage(c),
-		PageSize:   setting.AppSetting.PageSize,
+		Name:         name,
+		UserID:       cadreID,
+		Department:   department,
+		Category:     category,
+		AssessDept:   assessDept,
+		Year:         year,
+		Audited:      audited,
+		PageNum:      utils.GetPage(c),
+		PageSize:     setting.AppSetting.PageSize,
+		DepartmentID: departmentID,
 	}
 	assessments, err := assessmentService.GetAll()
 	if err != nil {
@@ -364,7 +370,12 @@ func GetPositionHistoriesMod(c *gin.Context) {
 	office := c.Query("office")
 	academicYear := c.Query("academic_year")
 	auditedStr := c.Query("audited")
-	audited := -1
+	departmentIDStr := c.Query("department_id")
+	departmentID := 0
+	if departmentIDStr != "" {
+		departmentID = com.StrTo(departmentIDStr).MustInt()
+	}
+	audited := 0
 	if auditedStr != "" {
 		if val, err := strconv.Atoi(auditedStr); err == nil {
 			audited = val
@@ -379,6 +390,7 @@ func GetPositionHistoriesMod(c *gin.Context) {
 		Audited:      audited,
 		PageNum:      utils.GetPage(c),
 		PageSize:     setting.AppSetting.PageSize,
+		DepartmentID: departmentID,
 	}
 	positionHistories, err := positionHistoryService.GetAll()
 	if err != nil {

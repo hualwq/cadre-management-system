@@ -190,3 +190,45 @@ func GetDepartmentByID(c *gin.Context) {
 		"department": department,
 	})
 }
+
+type ChangeUserRoleForm struct {
+	Role         string `json:"role" binding:"required"`
+	DepartmentID int    `json:"department_id"`
+}
+
+// PUT /sysadmin/user/:id/role
+func ChangeUserRoleByID(c *gin.Context) {
+	appG := app.Gin{C: c}
+	userID := c.Param("id")
+	var form ChangeUserRoleForm
+	if err := c.ShouldBindJSON(&form); err != nil {
+		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
+		return
+	}
+	changeUserRole := Sys_admin.ChangeUserRole{
+		CadreID: userID,
+		Role:    form.Role,
+	}
+	err := changeUserRole.ChangeUserRoleByID(changeUserRole.CadreID, changeUserRole.Role)
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR, nil)
+		return
+	}
+	appG.Response(http.StatusOK, e.SUCCESS, nil)
+}
+
+// GET /sysadmin/user/role?role=xxx
+func GetUserRoleList(c *gin.Context) {
+	appG := app.Gin{C: c}
+	role := c.Query("role")
+	if role == "" {
+		appG.Response(http.StatusBadRequest, e.INVALID_PARAMS, nil)
+		return
+	}
+	users, err := models.GetUsersByRole(role)
+	if err != nil {
+		appG.Response(http.StatusInternalServerError, e.ERROR, nil)
+		return
+	}
+	appG.Response(http.StatusOK, e.SUCCESS, gin.H{"users": users})
+}

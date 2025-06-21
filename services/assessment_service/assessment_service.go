@@ -2,22 +2,23 @@ package Assessment_service
 
 import (
 	"cadre-management/models"
+	"fmt"
 )
 
 type Assessment struct {
-	ID          int
-	Name        string
-	CadreID     string
-	Phone       string
-	Email       string
-	Department  string
-	Category    string
-	AssessDept  string
-	Year        int
-	WorkSummary string
-	Grade       string
-	Audited     int
-	UserID      string
+	ID           int
+	Name         string
+	Phone        string
+	Email        string
+	Department   string
+	Category     string
+	AssessDept   string
+	Year         int
+	WorkSummary  string
+	Grade        string
+	Audited      int
+	UserID       string
+	DepartmentID int
 
 	PageNum  int
 	PageSize int
@@ -33,25 +34,27 @@ func (a *Assessment) Get() (*models.Assessment, error) {
 
 type ComfirmAssessment struct {
 	ID    int    `json:"id"`
-	Grade string `json:"result"`
+	Grade string `json:"grade"`
 }
 
 func (c ComfirmAssessment) ComfirmAssessment() error {
 	if err := models.ComfirmAssessment(c.ID, c.Grade); err != nil {
 		return err
 	}
+	fmt.Println("ComfirmAssessmentaaaaa", c.ID, c.Grade)
 
 	return nil
 }
 
 func (a *Assessment) AddAssessment() error {
 	assessment := map[string]interface{}{
-		"user_id":      a.CadreID,
-		"department":   a.Department,
-		"category":     a.Category,
-		"assess_dept":  a.AssessDept,
-		"work_summary": a.WorkSummary,
-		"year":         a.Year,
+		"user_id":       a.UserID,
+		"department":    a.Department,
+		"category":      a.Category,
+		"assess_dept":   a.AssessDept,
+		"work_summary":  a.WorkSummary,
+		"year":          a.Year,
+		"department_id": a.DepartmentID,
 	}
 
 	if err := models.AddAssessment(assessment); err != nil {
@@ -79,8 +82,8 @@ func (a *Assessment) getMaps() map[string]interface{} {
 	if a.Name != "" {
 		maps["name"] = a.Name
 	}
-	if a.CadreID != "" {
-		maps["user_id"] = a.CadreID
+	if a.UserID != "" {
+		maps["user_id"] = a.UserID
 	}
 	if a.Phone != "" {
 		maps["phone"] = a.Phone
@@ -103,6 +106,9 @@ func (a *Assessment) getMaps() map[string]interface{} {
 	if a.Audited != 0 {
 		maps["is_audited"] = a.Audited
 	}
+	if a.DepartmentID != 0 {
+		maps["department_id"] = a.DepartmentID
+	}
 
 	return maps
 }
@@ -114,7 +120,7 @@ func (d *Assessment) Delete() error {
 func (a *Assessment) EditAssessmentMod() error {
 	data := map[string]interface{}{
 		"name":         a.Name,
-		"user_id":      a.CadreID,
+		"user_id":      a.UserID,
 		"phone":        a.Phone,
 		"email":        a.Email,
 		"department":   a.Department,

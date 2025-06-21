@@ -31,6 +31,7 @@ func InitRouter() *gin.Engine {
 	r.Use(gin.Recovery())
 
 	r.StaticFS("/upload/images", http.Dir(upload.GetImageFullPath()))
+	r.GET("/login", v1.Login)
 	r.POST("/login", v1.Login)
 	r.POST("/register", v1.Register)
 	r.POST("/refresh-token", v1.RefreshToken)
@@ -39,6 +40,12 @@ func InitRouter() *gin.Engine {
 	apiv1.Use(middleware.JWT()) //普通干部
 	{
 		apiv1.GET("/getuserid", v1.GetUserID)
+		apiv1.GET("/exists_cadreinfo", v1.ExistsCadreInfo)
+		apiv1.GET("/exists_resume", v1.ExistsResume)
+		apiv1.GET("/exists_familymember", v1.ExistsFamilyMember)
+		apiv1.GET("/exists_positionhistory", v1.ExistsPositionHistory)
+		apiv1.GET("/exists_assessment", v1.ExistsAssessment)
+
 		apiv1.POST("/cadreinfo", v1.AddCadreInfo)
 		apiv1.POST("/assessment", v1.AddAssessment)
 		apiv1.POST("/positionhistory", v1.AddPositionHistory)
@@ -105,6 +112,11 @@ func InitRouter() *gin.Engine {
 	{
 		apiv3.GET("/userbypage", v1.GetUserByPage)
 		apiv3.GET("/alluser", v1.GetAllUser)
+		apiv3.GET("/users", v1.GetUsers)
+		apiv3.GET("/user/:id", v1.GetUserByID)
+		apiv3.PUT("/user/:id/role", v1.ChangeUserRoleByID)
+		apiv3.GET("user/role", v1.GetUserRoleList)
+		apiv3.GET("/user/department", v1.GetUserDepartment)
 
 		apiv3.POST("/changerole", v1.ChangeUserRole)
 

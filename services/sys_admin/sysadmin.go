@@ -58,3 +58,7 @@ func (u *GetUser) GetUserByPage(page, pageSize int) ([]User, error) {
 func (s *ChangeUserRole) ChangeUserRole(userID, newRole string) error {
 	return models.ChangeUserRole(userID, newRole)
 }
+
+func (s *ChangeUserRole) ChangeUserRoleByID(userID, newRole string) error {
+	return models.ChangeUserRoleByID(userID, newRole)
+}

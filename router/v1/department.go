@@ -2,6 +2,8 @@ package v1
 
 import (
 	"cadre-management/models"
+	"cadre-management/pkg/app"
+	"cadre-management/pkg/e"
 	"cadre-management/services/Department_service"
 	"fmt"
 	"net/http"
@@ -17,12 +19,13 @@ func InitDepartmentService() {
 
 // 查询所有院系
 func ListDepartments(c *gin.Context) {
+	appG := app.Gin{C: c}
 	depts, err := deptService.ListDepartments()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": depts})
+	appG.Response(http.StatusOK, e.SUCCESS, gin.H{"data": depts})
 }
 
 // 设置院系管理员

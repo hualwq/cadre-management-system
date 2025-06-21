@@ -53,6 +53,7 @@ var MsgFlags = map[int]string{
 	ERROR_NOT_EXSIT_ASSESSMENT:         "不存在考核信息",
 	ERROR_EDIT_ASSESSMENT_FAIL:         "编辑考核信息失败",
 	ERROR_USER_NOT_LOGGED_IN:           "请重新登录",
+	ERROR_GET_USER_FAIL:                "获取用户信息失败",
 }
 
 // GetMsg get error information based on Code

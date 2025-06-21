@@ -208,3 +208,133 @@ func ChangeUserRole(userID, newRole string) error {
 	}
 	return nil
 }
+
+// GetUsersWithFilter 支持分页和多条件筛选
+func GetUsersWithFilter(page, pageSize int, userID, name, role string, departmentID uint) ([]User, int64, error) {
+	var users []User
+	var total int64
+	dbQuery := db.Model(&User{})
+
+	if userID != "" {
+		dbQuery = dbQuery.Where("user_id LIKE ?", "%"+userID+"%")
+	}
+	if name != "" {
+		dbQuery = dbQuery.Where("name LIKE ?", "%"+name+"%")
+	}
+	if role != "" {
+		dbQuery = dbQuery.Where("role = ?", role)
+	}
+	if departmentID != 0 {
+		dbQuery = dbQuery.Where("department_id = ?", departmentID)
+	}
+
+	dbQuery.Count(&total)
+
+	offset := (page - 1) * pageSize
+	if err := dbQuery.Offset(offset).Limit(pageSize).Find(&users).Error; err != nil {
+		return nil, 0, err
+	}
+	for i := range users {
+		users[i].Password = ""
+	}
+	return users, total, nil
+}
+
+// ExistCadreInfo 查询干部信息是否存在
+func ExistCadreInfo(userID string) (bool, error) {
+	var count int64
+	err := db.Table("cadm_cadreinfo").Where("user_id = ?", userID).Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+// ExistResume 查询简历是否存在
+func ExistResume(id uint) (bool, error) {
+	var count int64
+	err := db.Table("cadm_resume_entries").Where("id = ?", id).Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+// ExistFamilyMember 查询家庭成员是否存在
+func ExistFamilyMember(id uint) (bool, error) {
+	var count int64
+	err := db.Table("cadm_family_members").Where("id = ?", id).Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+// ExistPositionHistory 查询岗位历史是否存在
+func ExistPositionHistory(id uint) (bool, error) {
+	var count int64
+	err := db.Table("cadm_position_histories").Where("id = ?", id).Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+// ExistAssessment 查询考核是否存在
+func ExistAssessment(id uint) (bool, error) {
+	var count int64
+	err := db.Table("cadm_assessments").Where("id = ?", id).Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+func ChangeUserRoleByID(userID, newRole string) error {
+	if userID == "" || newRole == "" {
+		return errors.New("用户 ID 和新角色不能为空")
+	}
+
+	// 检查新角色是否合法
+	validRoles := []string{"department_admin", "cadre", "school_admin"}
+	valid := false
+	for _, role := range validRoles {
+		if role == newRole {
+			valid = true
+			break
+		}
+	}
+	if !valid {
+		return errors.New("无效的角色")
+	}
+
+	// 更新用户角色
+	var user User
+	result := db.Model(&user).Where("user_id = ?", userID).Update("role", newRole)
+	if result.Error != nil {
+		return result.Error
+	}
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}
+
+// GetUsersByRole 返回所有指定角色的用户
+func GetUsersByRole(role string) ([]User, error) {
+	var users []User
+	err := db.Table("cadm_users").Where("role = ?", role).Find(&users).Error
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
+func GetUserDepartment(userID string) (*User, error) {
+	var user User
+	err := db.Where("user_id = ?", userID).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
